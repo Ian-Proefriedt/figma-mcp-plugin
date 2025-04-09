@@ -1,0 +1,16 @@
+{
+  "name": "figma-mcp-plugin",
+  "version": "1.0.0",
+  "description": "Figma plugin for Material Component Properties",
+  "main": "mcp/plugin.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node mcp/start-mcp.cjs"
+  },
+  "keywords": [],
+  "author": "Ian Proefriedt",
+  "license": "ISC"
+}

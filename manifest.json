@@ -1,0 +1,9 @@
+{
+  "name": "v3-site",
+  "id": "v3-site-plugin",
+  "api": "1.0.0",
+  "main": "mcp/plugin.js",
+  "ui": "mcp/mcp-ui.html",
+  "editorType": ["figma", "dev"],
+  "capabilities": ["inspect"]
+} 

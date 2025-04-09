@@ -1,0 +1,2746 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    :root {
+      --background-color: #2c2c2c;
+      --text-color: #e0e0e0;
+      --border-color: #444444;
+      --section-hover: #3e3e3e;
+      --property-background: #383838;
+      --property-text: #cccccc;
+      --grid-gap: 8px;
+    }
+
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      font-size: 11px;
+    }
+
+    .plugin-container {
+      padding: 0 12px;
+      position: relative;
+    }
+
+    .section {
+      margin: 0 -12px;
+      border-bottom: 1px solid var(--border-color);
+      display: block;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .section-header:hover {
+      background-color: var(--section-hover);
+    }
+
+    .section-header h3 {
+      font-size: 11px;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .section-arrow {
+      width: 12px;
+      height: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 8px;
+      transform: rotate(-90deg);
+    }
+
+    .section-arrow.expanded {
+      transform: rotate(0deg);
+    }
+
+    .section-content-wrapper {
+      height: 0;
+      overflow: hidden;
+      transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .section-content {
+      padding: 8px 12px;
+      max-width: 300px;
+      display: block;
+    }
+
+    .properties-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: 100%;
+    }
+
+    .property-block {
+      background-color: rgba(255, 255, 255, 0.06);
+      border-radius: 4px;
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      height: 28px;
+      min-width: fit-content;
+      max-width: 100%;
+      flex: 0 1 auto;
+      position: relative;
+      box-sizing: border-box;
+      border: 1px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+
+    .property-block:hover {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .property-block.editing {
+      border-color: #4C8BFF;
+      background-color: var(--section-hover);
+    }
+
+    .property-block.manually-edited {
+      border-color: #4C8BFF;
+      opacity: 1;
+    }
+
+    .property-block .property-value {
+      color: var(--property-text);
+      font-weight: 500;
+      font-size: 11px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+
+    .property-block.editing input,
+    .property-block.editing select {
+      background: var(--section-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      color: var(--text-color);
+      font-size: 11px;
+      padding: 2px 4px;
+      width: auto;
+      min-width: 40px;
+      pointer-events: auto;
+    }
+
+    .property-block.editing .property-value {
+      padding: 0;
+      border: none;
+      background: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .property-block.editing input {
+      background: var(--section-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      color: var(--text-color);
+      font-size: 11px;
+      padding: 2px 4px;
+      width: 40px;
+      text-align: center;
+    }
+
+    .property-block.editing .property-value::before {
+      content: attr(data-qualifier);
+      color: #888888;
+      font-size: 11px;
+    }
+
+    .property-block.non-editable {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .property-block.editing .edit-button {
+      display: none;
+    }
+
+    .property-block.non-editable .edit-button {
+      display: none;
+    }
+
+    .property-block.editing .property-value {
+      background-color: var(--section-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      padding: 2px 4px;
+    }
+
+    .property-block.editing input,
+    .property-block.editing select {
+      background: var(--section-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      color: var(--text-color);
+      font-size: 11px;
+      padding: 2px 4px;
+    }
+
+    .property-label {
+      color: #888888;
+      font-size: 11px;
+      white-space: nowrap;
+      margin-right: 12px;
+    }
+
+    .property-padding {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .property-padding-value {
+      display: flex;
+      align-items: center;
+      color: var(--property-text);
+      font-weight: 500;
+      font-size: 11px;
+      position: relative;
+      margin-right: 2px;
+    }
+
+    .property-padding-value::before {
+      content: attr(data-label);
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+      margin-right: 2px;
+    }
+
+    /* Style for padding values when editing */
+    .property-block[data-property="padding"] input[type=number] {
+      margin-left: 0;
+      width: 40px;
+    }
+
+    .status-bar {
+      display: none;
+    }
+
+    .layer-tree {
+      display: none;
+    }
+
+    .raw-data {
+      display: none;
+    }
+
+    .property-position,
+    .property-size,
+    .property-constraints,
+    .property-sizing {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .property-position-value,
+    .property-size-value,
+    .property-constraints-value,
+    .property-sizing-value {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--property-text);
+      font-weight: 500;
+      font-size: 11px;
+      padding: 0 4px;
+      position: relative;
+      min-width: 40px;
+    }
+
+    .property-position-value:first-child::before,
+    .property-size-value:first-child::before {
+      content: "X: ";
+      color: #888888;
+      font-size: 11px;
+    }
+
+    .property-position-value:last-child::before,
+    .property-size-value:last-child::before {
+      content: "Y: ";
+      color: #888888;
+      font-size: 11px;
+    }
+
+    .property-constraints-value:first-child::before,
+    .property-sizing-value:first-child::before {
+      content: "H: ";
+      color: #888888;
+      font-size: 11px;
+    }
+
+    .property-constraints-value:last-child::before,
+    .property-sizing-value:last-child::before {
+      content: "V: ";
+      color: #888888;
+      font-size: 11px;
+    }
+
+    .property-color {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .property-color-preview {
+      flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      border: 1px solid var(--border-color);
+    }
+
+    .property-color-value {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .property-opacity-value {
+      flex-shrink: 0;
+      color: var(--property-text);
+      opacity: 0.8;
+      margin-left: 4px;
+      padding-left: 4px;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .property-stroke {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .property-stroke span {
+      flex-shrink: 0;
+      min-width: 16px;
+      text-align: right;
+    }
+
+    .property-radius {
+      display: flex;
+      align-items: center;
+    }
+
+    .property-radius-value {
+      min-width: 16px;
+      text-align: right;
+    }
+
+    /* Remove any conflicting styles */
+    .property-color,
+    .property-stroke,
+    .property-radius,
+    .property-position,
+    .property-size,
+    .property-constraints,
+    .property-sizing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .property-color-preview {
+      flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Add styles for color value */
+    .property-color-value {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Ensure property blocks maintain their layout */
+    .property-block {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      flex-direction: row !important;
+    }
+
+    .property-block .property-value {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+    }
+
+    /* Reset any nested flex containers */
+    .property-block .property-value > div {
+      width: auto !important;
+      flex: 1 !important;
+    }
+
+    /* Update the CSS for stroke weight */
+    .property-stroke-weight {
+      flex-shrink: 0;
+      color: var(--property-text);
+      opacity: 0.8;
+      margin-left: 4px;
+      padding-left: 4px;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .section-content {
+      display: block;
+      padding: 8px 12px;
+      max-width: 300px; /* Or whatever maximum width makes sense for your layout */
+    }
+
+    /* Add styles for the selection title */
+    .selection-title {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+      margin: 0 -12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: fit-content;
+    }
+
+    .selection-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      line-height: 1.4;
+    }
+
+    .selection-type {
+      font-size: 11px;
+      color: #888888;
+      margin: 4px 0 0 0;
+      padding: 0;
+      line-height: 1.2;
+    }
+
+    /* Add styles for the status indicator */
+    .status-indicator {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #4CAF50;
+      opacity: 0.8;
+    }
+
+    .status-indicator.error {
+      background-color: #f44336;
+    }
+
+    .status-indicator.warning {
+      background-color: #ff9800;
+    }
+
+    /* Add styles for hidden sections */
+    .section.hidden {
+      display: none;
+    }
+
+    /* Add styles for numeric control */
+    .numeric-control {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .numeric-control button {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .numeric-control button:hover {
+      background-color: var(--section-hover);
+    }
+
+    .numeric-control input {
+      background: none;
+      border: none;
+      color: var(--text-color);
+      width: 40px;
+      text-align: center;
+      font-size: 11px;
+      padding: 0;
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+
+    .numeric-control input::-webkit-outer-spin-button,
+    .numeric-control input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .property-block .edit-button {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-color);
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      margin-left: 4px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .property-block .edit-button:hover {
+      opacity: 1;
+      background-color: var(--section-hover);
+    }
+
+    .property-block .edit-button::before {
+      content: "✎";
+      font-size: 10px;
+    }
+
+    .property-block:not(.editing):hover .edit-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .property-block .reset-button {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-color);
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      margin-left: 4px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .property-block .reset-button:hover {
+      opacity: 1;
+      background-color: var(--section-hover);
+    }
+
+    .property-block .reset-button::before {
+      content: "↺";
+      font-size: 10px;
+    }
+
+    .property-block.manually-edited .reset-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Remove spinner arrows from number inputs */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    /* Style numeric inputs to match the screenshot */
+    .property-block.editing input[type=number],
+    .property-block input[type=number] {
+      width: auto;
+      min-width: 30px;
+      padding: 2px 4px;
+      text-align: center;
+      background-color: var(--background-color);
+      border: 1px solid #4C8BFF;
+      border-radius: 4px;
+      color: var(--text-color);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(76, 139, 255, 0.2);
+      font-size: 11px;
+      font-weight: 500;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    }
+
+    /* Specific styling for padding multi-inputs */
+    .property-padding-value input[type=number] {
+      margin-left: 4px;
+    }
+
+    /* Specific styling to match the padding inputs in screenshot */
+    .property-padding-value input[type=number] {
+      min-width: 30px;
+      width: 30px;
+      font-size: 11px;
+      font-weight: 500;
+      height: 20px;
+      line-height: 1;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    }
+
+    /* Consistent styling for all multi-input fields */
+    .property-position-value input[type=number],
+    .property-size-value input[type=number],
+    .property-constraints-value input[type=number],
+    .property-sizing-value input[type=number] {
+      min-width: 30px;
+      width: 30px;
+      font-size: 11px;
+      font-weight: 500;
+      height: 20px;
+      line-height: 1;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    }
+
+    /* Ensure padding inputs have spacing */
+    .property-padding {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    /* Specific styling for position multi-inputs */
+    .property-position-value input[type=number] {
+      width: fit-content; /* Try to fit content */
+      min-width: 25px;
+      max-width: 60px; /* Limit maximum expansion */
+      font-size: 11px;
+      font-weight: 500;
+      height: 20px;
+      line-height: 1;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      padding: 0 2px;
+      box-sizing: border-box;
+      flex: 0 1 auto; /* Don't grow, but can shrink, auto basis */
+    }
+
+    /* Consistent styling for all multi-input fields with content-hugging */
+    .property-position-value input[type=number],
+    .property-size-value input[type=number],
+    .property-constraints-value input[type=number],
+    .property-sizing-value input[type=number],
+    .property-padding-value input[type=number] {
+      min-width: unset;
+      width: auto;
+      font-size: 11px;
+      font-weight: 500;
+      height: 20px;
+      line-height: 1;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      padding: 0 2px;
+      box-sizing: border-box;
+    }
+
+    /* Container styling updates */
+    .property-position {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 4px;
+    }
+    
+    .property-position-value {
+      flex: 0 0 auto; /* Don't grow, don't shrink, size based on content */
+      min-width: auto;
+    }
+    
+    /* Label style for X: and Y: */
+    .property-position-value:first-child::before,
+    .property-position-value:last-child::before {
+      flex: 0 0 auto; /* Don't grow or shrink */
+    }
+
+    /* Remove duplicate pseudo-element definitions */
+    .property-position-value:first-child::before {
+      content: "X: ";
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    .property-position-value:last-child::before {
+      content: "Y: ";
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    .property-size-value:first-child::before {
+      content: "X: ";
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    .property-size-value:last-child::before {
+      content: "Y: ";
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    .property-constraints-value:first-child::before {
+      content: "H: ";
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    .property-constraints-value:last-child::before {
+      content: "V: ";
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    .property-sizing-value:first-child::before {
+      content: "H: ";
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    .property-sizing-value:last-child::before {
+      content: "V: ";
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    .property-padding-value::before {
+      content: attr(data-label);
+      color: #888888;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    /* Ensure consistent styling for value spans */
+    .property-position-value span,
+    .property-size-value span,
+    .property-constraints-value span,
+    .property-sizing-value span,
+    .property-padding-value span {
+      font-weight: 500;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    /* Remove any conflicting styles */
+    .property-position-value,
+    .property-size-value,
+    .property-constraints-value,
+    .property-sizing-value,
+    .property-padding-value {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 40px;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+  <div class="plugin-container">
+    <div class="status-indicator" title="Plugin initialized"></div>
+    <div class="selection-title">
+      <h2 class="selection-name">No Selection</h2>
+      <p class="selection-type">Select an element to view properties</p>
+      </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3>Layout</h3>
+        <div class="section-arrow">▼</div>
+      </div>
+      <div class="section-content-wrapper">
+        <div class="section-content">
+          <div class="properties-grid">
+            <div class="property-block" data-property="type">
+              <div class="property-label">Type</div>
+              <div class="property-value">Block</div>
+    </div>
+            <div class="property-block" data-property="direction">
+              <div class="property-label">Direction</div>
+              <div class="property-value">row</div>
+  </div>
+            <div class="property-block" data-property="align">
+              <div class="property-label">Align</div>
+              <div class="property-value">flex-start</div>
+      </div>
+            <div class="property-block" data-property="justify">
+              <div class="property-label">Justify</div>
+              <div class="property-value">flex-start</div>
+        </div>
+            <div class="property-block" data-property="gap">
+              <div class="property-label">Gap</div>
+              <div class="property-value">0</div>
+        </div>
+            <div class="property-block" data-property="padding">
+              <div class="property-label">Padding</div>
+              <div class="property-value">
+                <div class="property-padding">
+                  <div class="property-padding-value" data-label="T: ">0</div>
+                  <div class="property-padding-value" data-label="R: ">0</div>
+                  <div class="property-padding-value" data-label="B: ">0</div>
+                  <div class="property-padding-value" data-label="L: ">0</div>
+      </div>
+        </div>
+        </div>
+            <div class="property-block" data-property="overflow">
+              <div class="property-label">Overflow</div>
+              <div class="property-value">Visible</div>
+      </div>
+        </div>
+        </div>
+        </div>
+      </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3>Position & Size</h3>
+        <div class="section-arrow">▼</div>
+        </div>
+      <div class="section-content-wrapper">
+        <div class="section-content">
+          <div class="properties-grid">
+            <div class="property-block" data-property="position">
+              <div class="property-label">Position</div>
+              <div class="property-value">
+                <div class="property-position">
+                  <div class="property-position-value">X: 0</div>
+                  <div class="property-position-value">Y: 0</div>
+        </div>
+        </div>
+        </div>
+            <div class="property-block" data-property="size">
+              <div class="property-label">Size</div>
+              <div class="property-value">
+                <div class="property-size">
+                  <div class="property-size-value">0</div>
+                  <div class="property-size-value">0</div>
+      </div>
+      </div>
+        </div>
+            <div class="property-block" data-property="positioning">
+              <div class="property-label">Positioning</div>
+              <div class="property-value">Absolute</div>
+        </div>
+            <div class="property-block" data-property="constraints">
+              <div class="property-label">Constraints</div>
+              <div class="property-value">
+                <div class="property-constraints">
+                  <div class="property-constraints-value">None</div>
+                  <div class="property-constraints-value">None</div>
+      </div>
+        </div>
+        </div>
+            <div class="property-block" data-property="sizing">
+              <div class="property-label">Sizing</div>
+              <div class="property-value">
+                <div class="property-sizing">
+                  <div class="property-sizing-value">Fixed</div>
+                  <div class="property-sizing-value">Fixed</div>
+        </div>
+        </div>
+      </div>
+            <div class="property-block" data-property="rotation">
+              <div class="property-label">Rotation</div>
+              <div class="property-value">0°</div>
+        </div>
+            <div class="property-block" data-property="z-index">
+              <div class="property-label">Z-Index</div>
+              <div class="property-value">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3>Styles</h3>
+        <div class="section-arrow">▼</div>
+      </div>
+      <div class="section-content-wrapper">
+        <div class="section-content">
+          <div class="properties-grid">
+            <div class="property-block" data-property="fill">
+              <div class="property-label">Fill</div>
+              <div class="property-value">
+                <div class="property-color">
+                  <div class="property-color-preview"></div>
+                  <div class="property-color-value">None</div>
+                  <div class="property-opacity-value">100%</div>
+                </div>
+              </div>
+            </div>
+            <div class="property-block" data-property="stroke">
+              <div class="property-label">Stroke</div>
+              <div class="property-value">
+                <div class="property-color">
+                  <div class="property-color-preview"></div>
+                  <div class="property-color-value">None</div>
+                  <div class="property-stroke-weight">0</div>
+                </div>
+              </div>
+            </div>
+            <div class="property-block" data-property="radius">
+              <div class="property-label">Radius</div>
+              <div class="property-value">0</div>
+            </div>
+            <div class="property-block" data-property="blend">
+              <div class="property-label">Blend</div>
+              <div class="property-value">PASS_THROUGH</div>
+            </div>
+            <div class="property-block" data-property="shadow">
+              <div class="property-label">Shadow</div>
+              <div class="property-value">None</div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3>Text</h3>
+        <div class="section-arrow">▼</div>
+      </div>
+      <div class="section-content-wrapper">
+        <div class="section-content">
+          <div class="properties-grid">
+            <div class="property-block">
+              <div class="property-label">Font Size</div>
+              <div class="property-value property-font-size-value">0</div>
+            </div>
+            <div class="property-block" data-property="color">
+              <div class="property-label">Color</div>
+              <div class="property-value">
+                <div class="property-color">
+                  <div class="property-color-preview"></div>
+                  <div class="property-color-value">None</div>
+                </div>
+              </div>
+            </div>
+            <div class="property-block" data-property="alignment">
+              <div class="property-label">Alignment</div>
+              <div class="property-value">Left</div>
+            </div>
+            <div class="property-block" data-property="line-height">
+              <div class="property-label">Line Height</div>
+              <div class="property-value">Auto</div>
+            </div>
+            <div class="property-block" data-property="letter-spacing">
+              <div class="property-label">Letter Spacing</div>
+              <div class="property-value">0</div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3>Raw Data</h3>
+        <div class="section-arrow">▼</div>
+        </div>
+      <div class="section-content-wrapper">
+        <div class="section-content">
+          <pre id="raw-data"></pre>
+      </div>
+    </div>
+  </div>
+
+    <div class="status-bar">
+      <div class="status-text">Plugin Status: <span id="plugin-status">Initializing...</span></div>
+    </div>
+  </div>
+
+  <!-- Load utility scripts -->
+  <script>
+    // Property interpretation utilities
+    function interpretLayoutType(node) {
+      if (!node) return "None";
+      
+      console.log('Checking layout type for node:', node);
+      
+      // Check for auto layout in the layout object
+      if (node.layout?.mode) {
+        console.log('Found layout mode:', node.layout.mode);
+        return "Flex";
+      }
+      
+      // Then check node type
+      if (node.type === "FRAME") {
+        console.log('Found FRAME type');
+        return "Block";
+      }
+      if (node.type === "GROUP") {
+        console.log('Found GROUP type');
+        return "Flex";
+      }
+      
+      return "None";
+    }
+
+    function interpretDirection(node) {
+      if (!node) return "row";
+      
+      console.log('Checking direction for node:', node);
+      
+      // Check for layout mode in the layout object
+      if (node.layout?.mode === "VERTICAL") {
+        console.log('Found VERTICAL layout');
+        return "column";
+      }
+      if (node.layout?.mode === "HORIZONTAL") {
+        console.log('Found HORIZONTAL layout');
+        return "row";
+      }
+      
+      return "row";
+    }
+
+    function interpretAlignItems(node) {
+      if (!node) return "flex-start";
+      
+      console.log('Checking alignItems for node:', node);
+      
+      // Check for counterAxisAlignItems in the layout object
+      if (node.layout?.counterAxis?.alignItems) {
+        console.log('Found counterAxisAlignItems:', node.layout.counterAxis.alignItems);
+        switch (node.layout.counterAxis.alignItems) {
+          case "MIN":
+            return "flex-start";
+          case "MAX":
+            return "flex-end";
+          case "CENTER":
+            return "center";
+          case "SPACE_BETWEEN":
+            return "space-between";
+        }
+      }
+      
+      return "flex-start";
+    }
+
+    function interpretJustifyContent(node) {
+      if (!node) return "flex-start";
+      
+      console.log('Checking justifyContent for node:', node);
+      
+      // Check for primaryAxisAlignItems in the layout object
+      if (node.layout?.primaryAxis?.alignItems) {
+        console.log('Found primaryAxisAlignItems:', node.layout.primaryAxis.alignItems);
+        switch (node.layout.primaryAxis.alignItems) {
+          case "MIN":
+            return "flex-start";
+          case "MAX":
+            return "flex-end";
+          case "CENTER":
+            return "center";
+          case "SPACE_BETWEEN":
+            return "space-between";
+          case "SPACE_AROUND":
+            return "space-around";
+        }
+      }
+      
+      return "flex-start";
+    }
+
+    function interpretPadding(node) {
+      if (!node) return { top: 0, right: 0, bottom: 0, left: 0 };
+      
+      console.log('Checking padding for node:', node);
+      
+      // Check for padding in the layout object
+      if (node.layout?.padding) {
+        const padding = {
+          top: node.layout.padding.top || 0,
+          right: node.layout.padding.right || 0,
+          bottom: node.layout.padding.bottom || 0,
+          left: node.layout.padding.left || 0
+        };
+        console.log('Found padding in layout object:', padding);
+        return padding;
+      }
+      
+      return { top: 0, right: 0, bottom: 0, left: 0 };
+    }
+
+    function interpretGap(node) {
+      if (!node) return 0;
+      
+      console.log('Checking gap for node:', node);
+      
+      // Check for itemSpacing in the layout object
+      if (node.layout?.spacing?.items) {
+        console.log('Found itemSpacing in layout object:', node.layout.spacing.items);
+        return node.layout.spacing.items;
+      }
+      
+      return 0;
+    }
+
+    function interpretLayoutProperties(node) {
+      if (!node) return null;
+      
+      console.log('Interpreting layout properties for node:', node);
+      console.log('Node layout object:', node.layout);
+      console.log('Node autoLayout:', node.layout?.autoLayout);
+      console.log('Node parent layout:', node.layout?.parent);
+      console.log('Node parent autoLayout:', node.layout?.parent?.autoLayout);
+      
+      // Check if the node has layout properties
+      const hasLayout = node.layout;
+      console.log('Has layout:', hasLayout);
+      
+      const interpreted = {
+        type: interpretLayoutType(node),
+        direction: interpretDirection(node),
+        alignItems: interpretAlignItems(node),
+        justifyContent: interpretJustifyContent(node),
+        gap: interpretGap(node),
+        padding: interpretPadding(node)
+      };
+      
+      console.log('Interpreted properties:', interpreted);
+      return interpreted;
+    }
+
+    function interpretBlendMode(blendMode) {
+      if (!blendMode) return 'Normal';
+      
+      console.log('Interpreting blend mode:', blendMode);
+      
+      switch (blendMode) {
+        case 'PASS_THROUGH':
+          return 'Pass Through';
+        case 'NORMAL':
+          return 'Normal';
+        case 'DARKEN':
+          return 'Darken';
+        case 'MULTIPLY':
+          return 'Multiply';
+        case 'LINEAR_BURN':
+          return 'Linear Burn';
+        case 'COLOR_BURN':
+          return 'Color Burn';
+        case 'LIGHTEN':
+          return 'Lighten';
+        case 'SCREEN':
+          return 'Screen';
+        case 'LINEAR_DODGE':
+          return 'Linear Dodge';
+        case 'COLOR_DODGE':
+          return 'Color Dodge';
+        case 'OVERLAY':
+          return 'Overlay';
+        case 'SOFT_LIGHT':
+          return 'Soft Light';
+        case 'HARD_LIGHT':
+          return 'Hard Light';
+        case 'DIFFERENCE':
+          return 'Difference';
+        case 'EXCLUSION':
+          return 'Exclusion';
+        case 'HUE':
+          return 'Hue';
+        case 'SATURATION':
+          return 'Saturation';
+        case 'COLOR':
+          return 'Color';
+        case 'LUMINOSITY':
+          return 'Luminosity';
+        default:
+          return blendMode;
+      }
+    }
+
+    // Add this function with the other utility functions
+    function rgbToHex(r, g, b) {
+      const toHex = (n) => {
+        const hex = Math.round(n * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+    }
+
+    const pluginStatus = document.getElementById('plugin-status');
+    const rawDataDisplay = document.getElementById('raw-data');
+    let currentSelection = null;
+
+    // Initialize sections and add click handlers
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize property blocks first
+      const initPropertyBlocks = () => {
+        document.querySelectorAll('.property-block').forEach(block => {
+          // Remove any existing event listeners and reset buttons
+          const newBlock = block.cloneNode(true);
+          block.parentNode.replaceChild(newBlock, block);
+          
+          // Remove any existing reset buttons to prevent duplicates
+          const existingResetButton = newBlock.querySelector('.reset-button');
+          if (existingResetButton) {
+            existingResetButton.remove();
+          }
+          
+          // Store original values when initializing
+          const valueElement = newBlock.querySelector('.property-value');
+          if (valueElement) {
+            // Store original values in a consistent format
+            if (block.dataset.property === 'position' || 
+                block.dataset.property === 'size' || 
+                block.dataset.property === 'constraints' || 
+                block.dataset.property === 'sizing' || 
+                block.dataset.property === 'padding') {
+              const multiValues = valueElement.querySelectorAll(
+                '.property-position-value, .property-size-value, ' +
+                '.property-constraints-value, .property-sizing-value, ' +
+                '.property-padding-value'
+              );
+              // Store raw values without labels
+              const values = Array.from(multiValues).map(val => {
+                const span = val.querySelector('span');
+                return (span ? span.textContent : val.textContent).replace(/^[XYTRBLHV]:?\s*/, '').trim();
+              });
+              valueElement.dataset.originalContent = values.join(',');
+            } else {
+              valueElement.dataset.originalContent = valueElement.innerHTML;
+            }
+          }
+
+          if (!newBlock.classList.contains('non-editable')) {
+            // Add reset button
+            const resetButton = document.createElement('button');
+            resetButton.className = 'reset-button';
+            resetButton.title = 'Reset to original value';
+            newBlock.appendChild(resetButton);
+
+            // Single reset button handler
+            resetButton.addEventListener('click', (e) => {
+              e.stopPropagation();
+              if (valueElement && valueElement.dataset.originalContent) {
+                const isMultiInput = block.dataset.property === 'padding' || 
+                                   block.dataset.property === 'position' || 
+                                   block.dataset.property === 'size' || 
+                                   block.dataset.property === 'constraints' || 
+                                   block.dataset.property === 'sizing';
+                
+                if (isMultiInput) {
+                  const values = valueElement.dataset.originalContent.split(',');
+                  const multiValues = valueElement.querySelectorAll(
+                    '.property-position-value, .property-size-value, ' +
+                    '.property-constraints-value, .property-sizing-value, ' +
+                    '.property-padding-value'
+                  );
+                  
+                  multiValues.forEach((val, index) => {
+                    if (index < values.length) {
+                      val.innerHTML = '';
+                      const valueSpan = document.createElement('span');
+                      valueSpan.textContent = values[index];
+                      val.appendChild(valueSpan);
+                    }
+                  });
+                } else {
+                  valueElement.innerHTML = valueElement.dataset.originalContent;
+                }
+                newBlock.classList.remove('manually-edited');
+                newBlock.classList.remove('editing');
+              }
+            });
+
+            // Single click handler for the block
+            let clickOutsideHandler = null;
+            
+            newBlock.addEventListener('click', (e) => {
+              if (e.target.closest('.reset-button')) return;
+              
+              // Remove any existing click outside handler
+              if (clickOutsideHandler) {
+                document.removeEventListener('click', clickOutsideHandler);
+                clickOutsideHandler = null;
+              }
+              
+              // Your existing click handler code here...
+              // ... (keep the rest of the click handler code unchanged)
+              
+              // Set up new click outside handler
+              clickOutsideHandler = (e) => {
+                if (!newBlock.contains(e.target)) {
+                  // Your existing click outside handling code...
+                  // ... (keep the rest of the click outside code unchanged)
+                  
+                  // Clean up
+                  document.removeEventListener('click', clickOutsideHandler);
+                  clickOutsideHandler = null;
+                }
+              };
+              
+              setTimeout(() => {
+                document.addEventListener('click', clickOutsideHandler);
+              }, 0);
+            });
+          }
+        });
+      };
+
+      // Initialize sections
+      document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const section = header.parentElement;
+          const wrapper = section.querySelector('.section-content-wrapper');
+          const content = section.querySelector('.section-content');
+          const arrow = header.querySelector('.section-arrow');
+          
+          if (wrapper && content && arrow) {
+            const isExpanded = section.classList.contains('expanded');
+            if (!isExpanded) {
+              section.classList.add('expanded');
+              arrow.classList.add('expanded');
+              wrapper.style.height = 'auto';
+              const targetHeight = wrapper.scrollHeight;
+              wrapper.style.height = '0';
+              wrapper.offsetHeight;
+              wrapper.style.height = targetHeight + 'px';
+            } else {
+              wrapper.style.height = wrapper.scrollHeight + 'px';
+              wrapper.offsetHeight;
+              wrapper.style.height = '0';
+              section.classList.remove('expanded');
+              arrow.classList.remove('expanded');
+            }
+          }
+        });
+      });
+
+      // Initialize property blocks
+      initPropertyBlocks();
+    });
+
+    function formatValue(value) {
+      if (value === null) return 'null';
+      if (value === undefined) return 'undefined';
+      if (typeof value === 'object') {
+        return JSON.stringify(value, null, 2);
+      }
+      return String(value);
+    }
+
+    function renderPropertyGroup(container, title, properties) {
+      const group = document.createElement('div');
+      group.className = 'property-group';
+      
+      const titleEl = document.createElement('div');
+      titleEl.className = 'property-group-title';
+      titleEl.textContent = title;
+      group.appendChild(titleEl);
+
+      Object.entries(properties).forEach(([key, value]) => {
+        const item = document.createElement('div');
+        item.className = 'property-item';
+        
+        const name = document.createElement('span');
+        name.className = 'property-name';
+        name.textContent = key;
+        
+        const val = document.createElement('span');
+        val.className = 'property-value';
+        val.textContent = formatValue(value);
+        
+        item.appendChild(name);
+        item.appendChild(val);
+        group.appendChild(item);
+      });
+
+      container.appendChild(group);
+    }
+
+    function renderLayerTree(items) {
+      const container = document.querySelector('.layer-tree');
+      if (!container) return;
+      
+      container.innerHTML = ''; // Clear existing items
+      
+      items.forEach(item => {
+        const treeItem = document.createElement('div');
+        treeItem.className = 'tree-item';
+        treeItem.dataset.id = item.id;
+        treeItem.textContent = `${item.name} (${item.type})`;
+        treeItem.addEventListener('click', () => selectLayer(item.id));
+        container.appendChild(treeItem);
+      });
+    }
+
+    function selectLayer(id) {
+      // Remove selection from all items
+      document.querySelectorAll('.tree-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+
+      // Add selection to clicked item
+      const selectedItem = document.querySelector(`.tree-item[data-id="${id}"]`);
+      if (selectedItem) {
+        selectedItem.classList.add('selected');
+      }
+
+      // Request raw node data from the plugin
+      parent.postMessage({
+        pluginMessage: {
+          type: 'get-raw-node-data',
+          id: id
+        }
+      }, '*');
+    }
+    
+    function displayRawData(data) {
+      if (!data) return;
+      
+      rawDataDisplay.innerHTML = '';
+
+      // Group and display properties
+      if (data.id && data.name && data.type) {
+        renderPropertyGroup(rawDataDisplay, 'Basic Info', {
+          id: data.id,
+          name: data.name,
+          type: data.type,
+          visible: data.visible
+        });
+      }
+
+      if (data.position) {
+        renderPropertyGroup(rawDataDisplay, 'Position', data.position);
+      }
+
+      if (data.size) {
+        renderPropertyGroup(rawDataDisplay, 'Size', data.size);
+      }
+
+      if (data.transform) {
+        renderPropertyGroup(rawDataDisplay, 'Transform', data.transform);
+      }
+
+      if (data.layout) {
+        renderPropertyGroup(rawDataDisplay, 'Layout', data.layout);
+      }
+
+      if (data.visual) {
+        renderPropertyGroup(rawDataDisplay, 'Visual', data.visual);
+      }
+
+      // Type-specific properties
+      if (data.text) {
+        renderPropertyGroup(rawDataDisplay, 'Text Properties', data.text);
+      }
+
+      if (data.component) {
+        renderPropertyGroup(rawDataDisplay, 'Component Properties', data.component);
+      }
+
+      if (data.section) {
+        renderPropertyGroup(rawDataDisplay, 'Section Properties', data.section);
+      }
+
+      if (data.group) {
+        renderPropertyGroup(rawDataDisplay, 'Group Properties', data.group);
+      }
+
+      if (data.vector) {
+        renderPropertyGroup(rawDataDisplay, 'Vector Properties', data.vector);
+      }
+
+      // Debug all available properties
+      console.log('=== ELEMENT PROPERTIES ANALYSIS ===');
+      console.log('Element type:', data.type);
+      console.log('All available properties:', Object.keys(data));
+      
+      // Text specific properties
+      if (data.type === 'TEXT') {
+        console.log('=== TEXT PROPERTIES ===');
+        console.log('Text object:', data.text);
+        if (data.text) {
+          console.log('Text style:', data.text.style);
+          console.log('Font family:', data.text.fontFamily);
+          console.log('Font size:', data.text.fontSize);
+          console.log('Text color:', data.text.fills);
+          console.log('Text alignment:', data.text.textAlign);
+          console.log('Line height:', data.text.lineHeight);
+          console.log('Letter spacing:', data.text.letterSpacing);
+        }
+      }
+      
+      // Shape specific properties
+      if (data.type === 'RECTANGLE' || data.type === 'ELLIPSE' || data.type === 'POLYGON' || data.type === 'STAR') {
+        console.log('=== SHAPE PROPERTIES ===');
+        console.log('Visual object:', data.visual);
+        if (data.visual) {
+          console.log('Fills:', data.visual.fills);
+          console.log('Strokes:', data.visual.strokes);
+          console.log('Stroke weight:', data.visual.strokeWeight);
+          console.log('Corner radius:', data.visual.cornerRadius);
+        }
+      }
+      
+      // Frame specific properties
+      if (data.type === 'FRAME' || data.type === 'GROUP') {
+        console.log('=== FRAME PROPERTIES ===');
+        console.log('Visual object:', data.visual);
+        if (data.visual) {
+          console.log('Backgrounds:', data.visual.backgrounds);
+          console.log('Effects:', data.visual.effects);
+          console.log('Layout mode:', data.layout?.mode);
+        }
+      }
+      
+      // Component specific properties
+      if (data.type === 'COMPONENT' || data.type === 'INSTANCE') {
+        console.log('=== COMPONENT PROPERTIES ===');
+        console.log('Component object:', data.component);
+        if (data.component) {
+          console.log('Component properties:', data.component.properties);
+          console.log('Variant properties:', data.component.variantProperties);
+        }
+      }
+      
+      // Common properties
+      console.log('=== COMMON PROPERTIES ===');
+      console.log('Visual object:', data.visual);
+      if (data.visual) {
+        console.log('Opacity:', data.visual.opacity);
+        console.log('Blend mode:', data.visual.blendMode);
+        console.log('Effects:', data.visual.effects);
+      }
+      console.log('Constraints:', data.layout?.constraints);
+      console.log('Layout constraints:', data.layout?.layoutConstraints);
+      console.log('========================');
+    }
+
+    function updateSectionVisibility(data) {
+      if (!data) return;
+
+      // Find all sections
+      const sections = document.querySelectorAll('.section');
+      
+      // Show/hide sections based on element type
+      sections.forEach(section => {
+        const header = section.querySelector('h3');
+        if (!header) return;
+
+        // Hide Raw Data section
+        if (header.textContent === 'Raw Data') {
+          section.classList.add('hidden');
+        } 
+        // Hide Text section for non-text elements
+        else if (header.textContent === 'Text' && data.type !== 'TEXT') {
+          section.classList.add('hidden');
+        }
+        // Show all other sections
+        else {
+          section.classList.remove('hidden');
+          if (section.style.display) {
+            section.style.removeProperty('display');
+          }
+        }
+      });
+
+      console.log('=== SECTION VISIBILITY UPDATE ===');
+      console.log('Element type:', data.type);
+      sections.forEach(section => {
+        const header = section.querySelector('h3');
+        if (header) {
+          console.log(`${header.textContent}: ${!section.classList.contains('hidden')}`);
+        }
+      });
+    }
+
+    function isActuallyInAutoLayoutDespiteBeingAbsolute(data) {
+      if (data.type !== "TEXT") return false;
+
+      const layoutMode = data.layout?.parent?.layoutMode;
+      const positioning = data.layout?.positioning;
+      const constraints = data.layout?.constraints || {};
+      const hasNeutralConstraints = (
+        constraints.horizontal === "MIN" &&
+        constraints.vertical === "MIN"
+      );
+
+      // Check if node is being flagged as absolute
+      const isMarkedAbsolute = positioning === "ABSOLUTE";
+
+      // Check if parent is auto layout
+      const isInsideAutoLayout = layoutMode === "HORIZONTAL" || layoutMode === "VERTICAL";
+
+      // Fix only if:
+      // 1. It's marked as ABSOLUTE
+      // 2. It's inside an auto layout
+      // 3. It has no meaningful constraints (so likely in flow visually)
+      if (isMarkedAbsolute && isInsideAutoLayout && hasNeutralConstraints) {
+        return true; // treat as relative (override the false positive)
+      }
+
+      // If the text element has AUTO positioning, it's in auto layout
+      if (positioning === "AUTO") {
+        return true;
+      }
+
+      return false;
+    }
+
+    function updateLayoutProperties(data) {
+      if (!data) {
+        console.log('No data provided to updateLayoutProperties');
+        return;
+      }
+      
+      console.log('=== DEBUGGING AUTO LAYOUT DETECTION ===');
+      console.log('Raw node data:', data);
+      console.log('Node layout:', data.layout);
+      console.log('Node autoLayout:', data.layout?.autoLayout);
+      console.log('Node parent layout:', data.layout?.parent);
+      console.log('Node parent layoutMode:', data.layout?.parent?.layoutMode);
+      console.log('Node positioning:', data.layout?.positioning);
+      
+      // Add detailed debugging for text nodes
+      if (data.type === "TEXT") {
+        console.log('>>> OVERRIDE CHECK for TEXT NODE <<<');
+        console.log('Type:', data.type);
+        console.log('Positioning:', data.layout?.positioning);
+        console.log('Parent layoutMode:', data.layout?.parent?.layoutMode);
+        console.log('Constraints:', data.layout?.constraints);
+        console.log('Override applied:', isActuallyInAutoLayoutDespiteBeingAbsolute(data));
+      }
+      
+      // Update UI elements
+      try {
+        const isAutoLayoutContainer = data.layout?.autoLayout?.mode !== undefined;
+        const isActuallyInAutoLayout = isActuallyInAutoLayoutDespiteBeingAbsolute(data);
+        const isInAutoLayout = 
+          data.layout?.type === 'AUTO' || 
+          data.layout?.parent?.type === 'AUTO' ||
+          data.layout?.parent?.layoutMode === "HORIZONTAL" ||
+          data.layout?.parent?.layoutMode === "VERTICAL" ||
+          isActuallyInAutoLayout;
+        const ignoresAutoLayout = data.layout?.isIgnoringAutoLayout === true && !isActuallyInAutoLayout;
+        const positioning = data.layout?.positioning;
+        
+        console.log('=== DETECTION RESULTS ===');
+        console.log('isAutoLayoutContainer:', isAutoLayoutContainer);
+        console.log('isActuallyInAutoLayout:', isActuallyInAutoLayout);
+        console.log('isInAutoLayout:', isInAutoLayout);
+        console.log('ignoresAutoLayout:', ignoresAutoLayout);
+        console.log('positioning:', positioning);
+        console.log('========================');
+
+        // Update positioning type
+        const positioningEl = document.querySelector('[data-property="positioning"] .property-value');
+        if (positioningEl) {
+          const positioningType = (isInAutoLayout && !ignoresAutoLayout) ? "Relative" : "Absolute";
+          positioningEl.textContent = positioningType;
+          positioningEl.dataset.originalContent = positioningType;
+          console.log('Positioning type:', positioningType);
+        }
+
+        // Update overflow
+        const overflowEl = document.querySelector('[data-property="overflow"] .property-value');
+        if (overflowEl) {
+          const overflowValue = data.clipsContent ? "hidden" : "visible";
+          overflowEl.textContent = overflowValue;
+          overflowEl.dataset.originalContent = overflowValue;
+          console.log('Overflow:', overflowValue);
+        }
+
+        // Update z-index
+        const zIndexEl = document.querySelector('[data-property="z-index"] .property-value');
+        if (zIndexEl) {
+          // Default to 0 unless specified
+          const zIndexValue = data.zIndex || 0;
+          zIndexEl.textContent = zIndexValue;
+          zIndexEl.dataset.originalContent = zIndexValue;
+          console.log('Z-index:', zIndexValue);
+        }
+
+        // Store original values for all properties
+        document.querySelectorAll('.property-block').forEach(block => {
+          const valueElement = block.querySelector('.property-value');
+          if (valueElement) {
+            valueElement.dataset.originalContent = valueElement.innerHTML;
+          }
+        });
+
+        // Update editability based on positioning
+        const positionBlock = document.querySelector('[data-property="position"]');
+        const constraintsBlock = document.querySelector('[data-property="constraints"]');
+        
+        if (isInAutoLayout && !ignoresAutoLayout) {
+          if (positionBlock) positionBlock.classList.add('non-editable');
+          if (constraintsBlock) constraintsBlock.classList.add('non-editable');
+        } else {
+          if (positionBlock) positionBlock.classList.remove('non-editable');
+          if (constraintsBlock) constraintsBlock.classList.remove('non-editable');
+        }
+
+        // Update layout properties
+        const typeEl = document.querySelector('[data-property="type"] .property-value');
+        if (typeEl) {
+          typeEl.textContent = isAutoLayoutContainer ? "Flex" : "Block";
+          console.log('Layout type:', typeEl.textContent);
+        }
+
+        const directionEl = document.querySelector('[data-property="direction"] .property-value');
+        if (directionEl) {
+          directionEl.textContent = data.layout?.autoLayout?.mode === "VERTICAL" ? "column" : "row";
+          console.log('Direction:', directionEl.textContent);
+        }
+
+        const alignEl = document.querySelector('[data-property="align"] .property-value');
+        if (alignEl) {
+          const align = data.layout?.autoLayout?.counterAxis?.alignItems || "MIN";
+          alignEl.textContent = 
+            (align === "MIN" ? "flex-start" : 
+             align === "MAX" ? "flex-end" : 
+             align === "CENTER" ? "center" : "flex-start");
+          console.log('Align:', alignEl.textContent);
+        }
+
+        const justifyEl = document.querySelector('[data-property="justify"] .property-value');
+        if (justifyEl) {
+          const justify = data.layout?.autoLayout?.primaryAxis?.alignItems || "MIN";
+          justifyEl.textContent = 
+            (justify === "MIN" ? "flex-start" : 
+             justify === "MAX" ? "flex-end" : 
+             justify === "CENTER" ? "center" : 
+             justify === "SPACE_BETWEEN" ? "space-between" : "flex-start");
+          console.log('Justify:', justifyEl.textContent);
+        }
+
+        const gapEl = document.querySelector('[data-property="gap"] .property-value');
+        if (gapEl) {
+          gapEl.textContent = data.layout?.autoLayout?.spacing?.items || 0;
+          console.log('Gap:', gapEl.textContent);
+        }
+
+        const paddingEl = document.querySelector('[data-property="padding"] .property-value');
+        if (paddingEl) {
+          const paddingValues = paddingEl.querySelectorAll('.property-padding-value');
+          if (paddingValues.length === 4) {
+            paddingValues[0].textContent = data.layout?.autoLayout?.padding?.top || 0;
+            paddingValues[1].textContent = data.layout?.autoLayout?.padding?.right || 0;
+            paddingValues[2].textContent = data.layout?.autoLayout?.padding?.bottom || 0;
+            paddingValues[3].textContent = data.layout?.autoLayout?.padding?.left || 0;
+            console.log('Padding:', {
+              top: paddingValues[0].textContent,
+              right: paddingValues[1].textContent,
+              bottom: paddingValues[2].textContent,
+              left: paddingValues[3].textContent
+            });
+          }
+        }
+
+        // Update rotation
+        const rotationEl = document.querySelector('[data-property="rotation"] .property-value');
+        if (rotationEl) {
+          rotationEl.textContent = `${data.rotation || 0}°`;
+        }
+
+        // Update position and constraints - show "auto" for position and constraints if in auto layout and not ignoring it
+        const positionContainer = document.querySelector('[data-property="position"]');
+        const sizeContainer = document.querySelector('[data-property="size"]');
+        const constraintsContainer = document.querySelector('[data-property="constraints"]');
+        const sizingContainer = document.querySelector('[data-property="sizing"]');
+
+        if (positionContainer) {
+          const positionValues = positionContainer.querySelectorAll('.property-position-value');
+          if (positionValues.length === 2) {
+            // Clear existing content
+            positionValues[0].innerHTML = '';
+            positionValues[1].innerHTML = '';
+            
+            // Set new content
+            if (isInAutoLayout && !ignoresAutoLayout) {
+              positionValues[0].textContent = "auto";
+              positionValues[1].textContent = "auto";
+            } else {
+              // Ensure we have numeric values
+              const xPos = data.position?.x || 0;
+              const yPos = data.position?.y || 0;
+              positionValues[0].textContent = xPos;
+              positionValues[1].textContent = yPos;
+            }
+            
+            // Store original values in a format that won't be displayed as JSON
+            valueElement.dataset.originalContent = `${positionValues[0].textContent},${positionValues[1].textContent}`;
+            console.log('Position:', { x: xPos, y: yPos });
+          }
+        }
+
+        if (sizeContainer) {
+          const sizeValues = sizeContainer.querySelectorAll('.property-size-value');
+          if (sizeValues.length === 2) {
+            // Always use the layer dimensions for the main size property
+            sizeValues[0].textContent = data.size?.width?.value || 0;
+            sizeValues[1].textContent = data.size?.height?.value || 0;
+            console.log('Size:', { width: data.size?.width?.value, height: data.size?.height?.value });
+          }
+        }
+
+        if (constraintsContainer) {
+          const constraintsValues = constraintsContainer.querySelectorAll('.property-constraints-value');
+          if (constraintsValues.length === 2) {
+            if (isInAutoLayout && !ignoresAutoLayout) {
+              constraintsValues[0].textContent = "auto";
+              constraintsValues[1].textContent = "auto";
+      } else {
+              const horizontal = data.layout?.constraints?.horizontal || "NONE";
+              const vertical = data.layout?.constraints?.vertical || "NONE";
+              constraintsValues[0].textContent = 
+                (horizontal === "MIN" ? "Left" : 
+                 horizontal === "MAX" ? "Right" : 
+                 horizontal === "CENTER" ? "Center" : "None");
+              constraintsValues[1].textContent = 
+                (vertical === "MIN" ? "Top" : 
+                 vertical === "MAX" ? "Bottom" : 
+                 vertical === "CENTER" ? "Center" : "None");
+            }
+            console.log('Constraints:', { horizontal: data.layout?.constraints?.horizontal, vertical: data.layout?.constraints?.vertical });
+          }
+        }
+
+        if (sizingContainer) {
+          const sizingValues = sizingContainer.querySelectorAll('.property-sizing-value');
+          if (sizingValues.length === 2) {
+            const horizontal = data.layout?.sizing?.horizontal || "FIXED";
+            const vertical = data.layout?.sizing?.vertical || "FIXED";
+            sizingValues[0].textContent = 
+              (horizontal === "FILL" ? "Fill" : 
+               horizontal === "HUG" ? "Hug" : "Fixed");
+            sizingValues[1].textContent = 
+              (vertical === "FILL" ? "Fill" : 
+               vertical === "HUG" ? "Hug" : "Fixed");
+            console.log('Sizing:', { horizontal, vertical });
+          }
+        }
+
+        // Show the section content when we have layout data
+        const sectionContent = document.querySelector('.section-content');
+        const sectionArrow = document.querySelector('.section-arrow');
+        if (sectionContent && sectionArrow) {
+          sectionContent.classList.add('expanded');
+          sectionArrow.classList.add('expanded');
+        }
+
+        // Update visual properties
+        console.log('=== DEBUGGING VISUAL PROPERTIES ===');
+        console.log('Raw visual data:', data.visual);
+        console.log('Fills:', data.visual?.fills);
+        console.log('Strokes:', data.visual?.strokes);
+        console.log('Corner radius:', data.visual?.cornerRadius);
+        console.log('Opacity:', data.visual?.opacity);
+        console.log('Blend mode:', data.visual?.blendMode);
+        console.log('Effects:', data.visual?.effects);
+        console.log('========================');
+
+        const fillEl = document.querySelector('[data-property="fill"] .property-value');
+        if (fillEl) {
+          const colorPreview = fillEl.querySelector('.property-color-preview');
+          const colorValue = fillEl.querySelector('.property-color-value');
+          const opacityValue = fillEl.querySelector('.property-opacity-value');
+          if (data.visual?.fills && data.visual.fills.length > 0) {
+            const fill = data.visual.fills[0];
+            if (fill.type === 'SOLID') {
+              const color = fill.color;
+              const opacity = fill.opacity || 1;
+              colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
+              colorValue.textContent = rgbToHex(color.r, color.g, color.b);
+              opacityValue.textContent = `${Math.round(opacity * 100)}%`;
+              console.log('Updated fill color:', colorValue.textContent);
+              console.log('Updated opacity:', opacityValue.textContent);
+      } else {
+              colorPreview.style.backgroundColor = 'transparent';
+              colorValue.textContent = 'None';
+              opacityValue.textContent = '100%';
+            }
+          } else {
+            colorPreview.style.backgroundColor = 'transparent';
+            colorValue.textContent = 'None';
+            opacityValue.textContent = '100%';
+          }
+        }
+
+        const strokeEl = document.querySelector('[data-property="stroke"] .property-value');
+        if (strokeEl) {
+          const strokeWeight = strokeEl.querySelector('.property-stroke-weight');
+          const colorPreview = strokeEl.querySelector('.property-color-preview');
+          const colorValue = strokeEl.querySelector('.property-color-value');
+          
+          if (data.visual?.strokes && data.visual.strokes.length > 0) {
+            const stroke = data.visual.strokes[0];
+            strokeWeight.textContent = data.visual.strokeWeight || 0;
+            if (stroke.type === 'SOLID') {
+              const color = stroke.color;
+              const opacity = stroke.opacity || 1;
+              colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
+              colorValue.textContent = rgbToHex(color.r, color.g, color.b);
+              console.log('Stroke color:', color);
+              console.log('Stroke opacity:', opacity);
+      } else {
+              colorPreview.style.backgroundColor = 'transparent';
+              colorValue.textContent = 'None';
+            }
+          } else {
+            strokeWeight.textContent = '0';
+            colorPreview.style.backgroundColor = 'transparent';
+            colorValue.textContent = 'None';
+          }
+        }
+
+        const radiusEl = document.querySelector('[data-property="radius"] .property-value');
+        if (radiusEl) {
+          const radiusValue = radiusEl.querySelector('.property-radius-value');
+          radiusValue.textContent = data.visual?.cornerRadius || 0;
+          console.log('Corner radius:', data.visual?.cornerRadius);
+        }
+
+        const opacityEl = document.querySelector('[data-property="opacity"] .property-value');
+        if (opacityEl) {
+          const opacity = Math.round((data.visual?.opacity || 1) * 100);
+          opacityEl.textContent = `${opacity}%`;
+          console.log('Updated opacity:', opacityEl.textContent);
+      } else {
+          console.log('Opacity element not found');
+        }
+
+        const blendEl = document.querySelector('[data-property="blend"] .property-value');
+        if (blendEl) {
+          const blendMode = data.visual?.blendMode || 'NORMAL';
+          blendEl.textContent = interpretBlendMode(blendMode);
+          console.log('Updated blend mode:', blendEl.textContent);
+        } else {
+          console.log('Blend mode element not found');
+        }
+
+        const shadowEl = document.querySelector('[data-property="shadow"] .property-value');
+        if (shadowEl) {
+          if (data.visual?.effects && data.visual.effects.length > 0) {
+            const shadow = data.visual.effects.find(effect => effect.type === 'DROP_SHADOW');
+            shadowEl.textContent = shadow ? 'Enabled' : 'None';
+            console.log('Updated shadow:', shadowEl.textContent);
+          } else {
+            shadowEl.textContent = 'None';
+          }
+        }
+
+      } catch (error) {
+        console.error('Error updating layout properties:', error);
+      }
+    }
+
+    function updateTextProperties(data) {
+      if (!data) return;
+
+      // Get all text property elements
+      const fontSizeEl = document.querySelector('.property-font-size-value');
+      const colorEl = document.querySelector('[data-property="color"] .property-value');
+      const alignmentEl = document.querySelector('[data-property="alignment"] .property-value');
+      const lineHeightEl = document.querySelector('[data-property="line-height"] .property-value');
+      const letterSpacingEl = document.querySelector('[data-property="letter-spacing"] .property-value');
+
+      // Update text properties if it's a text layer
+      if (data.type === 'TEXT') {
+        console.log('=== DEBUGGING TEXT PROPERTIES ===');
+        console.log('Text object:', data.text);
+        console.log('Text style:', data.text?.style);
+        console.log('Line height:', data.text?.style?.spacing?.line);
+        console.log('========================');
+
+        // Update font size
+        if (fontSizeEl) {
+          fontSizeEl.textContent = data.text?.style?.fontSize || 0;
+        }
+
+        // Update text color
+        if (colorEl) {
+          const colorPreview = colorEl.querySelector('.property-color-preview');
+          const colorValue = colorEl.querySelector('.property-color-value');
+          if (data.visual?.fills && data.visual.fills.length > 0) {
+            const fill = data.visual.fills[0];
+            if (fill.type === 'SOLID') {
+              const color = fill.color;
+              const opacity = fill.opacity || 1;
+              colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
+              colorValue.textContent = rgbToHex(color.r, color.g, color.b);
+            } else {
+              colorPreview.style.backgroundColor = 'transparent';
+              colorValue.textContent = 'None';
+            }
+          } else {
+            colorPreview.style.backgroundColor = 'transparent';
+            colorValue.textContent = 'None';
+          }
+        }
+
+        // Update text alignment
+        if (alignmentEl) {
+          const alignment = data.text?.style?.alignment?.horizontal || 'LEFT';
+          alignmentEl.textContent = alignment.charAt(0) + alignment.slice(1).toLowerCase();
+        }
+
+        // Update line height
+        if (lineHeightEl) {
+          const lineHeight = data.text?.style?.spacing?.line;
+          if (lineHeight && lineHeight.value !== undefined) {
+            lineHeightEl.textContent = lineHeight.value;
+          } else {
+            lineHeightEl.textContent = 'Auto';
+          }
+        }
+
+        // Update letter spacing
+        if (letterSpacingEl) {
+          const letterSpacing = data.text?.style?.spacing?.letter;
+          if (letterSpacing && letterSpacing.value !== undefined) {
+            if (letterSpacing.unit === 'PERCENT') {
+              letterSpacingEl.textContent = `${letterSpacing.value}%`;
+            } else {
+              letterSpacingEl.textContent = letterSpacing.value;
+            }
+          } else {
+            letterSpacingEl.textContent = '0';
+          }
+        }
+      } else {
+        // Clear all text properties for non-text layers
+        if (fontSizeEl) fontSizeEl.textContent = '0';
+        if (colorEl) {
+          const colorPreview = colorEl.querySelector('.property-color-preview');
+          const colorValue = colorEl.querySelector('.property-color-value');
+          colorPreview.style.backgroundColor = 'transparent';
+          colorValue.textContent = 'None';
+        }
+        if (alignmentEl) alignmentEl.textContent = 'Left';
+        if (lineHeightEl) lineHeightEl.textContent = 'Auto';
+        if (letterSpacingEl) letterSpacingEl.textContent = '0';
+      }
+    }
+
+    function updateVisualProperties(data) {
+      if (!data) {
+        console.log('No data provided to updateVisualProperties');
+        return;
+      }
+
+      console.log('=== DEBUGGING VISUAL PROPERTIES ===');
+      console.log('Element type:', data.type);
+      console.log('Raw visual data:', data.visual);
+      console.log('Fills:', data.visual?.fills);
+      console.log('Strokes:', data.visual?.strokes);
+      console.log('Corner radius:', data.visual?.cornerRadius);
+      console.log('Opacity:', data.visual?.opacity);
+      console.log('Blend mode:', data.visual?.blendMode);
+      console.log('Effects:', data.visual?.effects);
+      console.log('========================');
+
+      // Update visual properties based on element type
+      const fillEl = document.querySelector('[data-property="fill"] .property-value');
+      const strokeEl = document.querySelector('[data-property="stroke"] .property-value');
+      const radiusEl = document.querySelector('[data-property="radius"] .property-value');
+      const opacityEl = document.querySelector('[data-property="opacity"] .property-value');
+      const blendEl = document.querySelector('[data-property="blend"] .property-value');
+      const shadowEl = document.querySelector('[data-property="shadow"] .property-value');
+
+      // Show/hide properties based on element type
+      const blocks = {
+        fill: document.querySelector('[data-property="fill"]'),
+        stroke: document.querySelector('[data-property="stroke"]'),
+        radius: document.querySelector('[data-property="radius"]'),
+        opacity: document.querySelector('[data-property="opacity"]'),
+        blend: document.querySelector('[data-property="blend"]'),
+        shadow: document.querySelector('[data-property="shadow"]')
+      };
+
+      // Log which properties should be visible
+      console.log('=== PROPERTY VISIBILITY ===');
+      console.log('Element type:', data.type);
+      console.log('Fill visible:', ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'TEXT'].includes(data.type));
+      console.log('Stroke visible:', ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR'].includes(data.type));
+      console.log('Radius visible:', ['FRAME', 'RECTANGLE'].includes(data.type));
+      console.log('========================');
+
+      // Show/hide properties based on element type
+      if (blocks.fill) {
+        blocks.fill.style.display = ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'TEXT'].includes(data.type) ? 'block' : 'none';
+      }
+      if (blocks.stroke) {
+        blocks.stroke.style.display = ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR'].includes(data.type) ? 'block' : 'none';
+      }
+      if (blocks.radius) {
+        blocks.radius.style.display = ['FRAME', 'RECTANGLE'].includes(data.type) ? 'block' : 'none';
+      }
+      if (blocks.opacity) {
+        blocks.opacity.style.display = 'block'; // Always show opacity
+      }
+      if (blocks.blend) {
+        blocks.blend.style.display = 'block'; // Always show blend mode
+      }
+      if (blocks.shadow) {
+        blocks.shadow.style.display = ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'TEXT'].includes(data.type) ? 'block' : 'none';
+      }
+
+      // Update fill and opacity
+      if (fillEl && data.visual?.fills && data.visual.fills.length > 0) {
+        const fill = data.visual.fills[0];
+        console.log('Processing fill:', fill);
+        if (fill.type === 'SOLID') {
+          const color = fill.color;
+          const opacity = fill.opacity || 1;
+          const colorPreview = fillEl.querySelector('.property-color-preview');
+          const colorValue = fillEl.querySelector('.property-color-value');
+          const opacityValue = fillEl.querySelector('.property-opacity-value');
+          if (colorPreview && colorValue && opacityValue) {
+            colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
+            colorValue.textContent = rgbToHex(color.r, color.g, color.b);
+            opacityValue.textContent = `${Math.round(opacity * 100)}%`;
+            console.log('Updated fill color:', colorValue.textContent);
+            console.log('Updated opacity:', opacityValue.textContent);
+      } else {
+            console.log('Color preview, value, or opacity elements not found');
+          }
+        } else {
+          const colorPreview = fillEl?.querySelector('.property-color-preview');
+          const colorValue = fillEl?.querySelector('.property-color-value');
+          const opacityValue = fillEl?.querySelector('.property-opacity-value');
+          if (colorPreview && colorValue && opacityValue) {
+            colorPreview.style.backgroundColor = 'transparent';
+            colorValue.textContent = 'None';
+            opacityValue.textContent = '100%';
+          }
+          console.log('Non-solid fill type:', fill.type);
+        }
+      } else {
+        const colorPreview = fillEl?.querySelector('.property-color-preview');
+        const colorValue = fillEl?.querySelector('.property-color-value');
+        const opacityValue = fillEl?.querySelector('.property-opacity-value');
+        if (colorPreview && colorValue && opacityValue) {
+          colorPreview.style.backgroundColor = 'transparent';
+          colorValue.textContent = 'None';
+          opacityValue.textContent = '100%';
+        }
+        console.log('No fills found or fill element not found');
+      }
+
+      // Update stroke
+      if (strokeEl && data.visual?.strokes && data.visual.strokes.length > 0) {
+        const stroke = data.visual.strokes[0];
+        console.log('Processing stroke:', stroke);
+        const colorPreview = strokeEl.querySelector('.property-color-preview');
+        const colorValue = strokeEl.querySelector('.property-color-value');
+        const strokeWeight = strokeEl.querySelector('.property-stroke-weight');
+        
+        if (stroke.type === 'SOLID' && colorPreview && colorValue && strokeWeight) {
+          const color = stroke.color;
+          const opacity = stroke.opacity || 1;
+          const weight = data.visual.strokeWeight || 0;
+          colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
+          colorValue.textContent = rgbToHex(color.r, color.g, color.b);
+          strokeWeight.textContent = weight;
+          console.log('Updated stroke color:', colorValue.textContent);
+          console.log('Updated stroke weight:', strokeWeight.textContent);
+        } else {
+          if (colorPreview) colorPreview.style.backgroundColor = 'transparent';
+          if (colorValue) colorValue.textContent = 'None';
+          if (strokeWeight) strokeWeight.textContent = '0';
+          console.log('Non-solid stroke type:', stroke.type);
+        }
+      } else {
+        const colorPreview = strokeEl?.querySelector('.property-color-preview');
+        const colorValue = strokeEl?.querySelector('.property-color-value');
+        const strokeWeight = strokeEl?.querySelector('.property-stroke-weight');
+        if (colorPreview) colorPreview.style.backgroundColor = 'transparent';
+        if (colorValue) colorValue.textContent = 'None';
+        if (strokeWeight) strokeWeight.textContent = '0';
+        console.log('No strokes found or stroke element not found');
+      }
+
+      // Update radius
+      if (radiusEl) {
+        const radiusValue = radiusEl.querySelector('.property-radius-value');
+        if (radiusValue) {
+          radiusValue.textContent = data.visual?.cornerRadius || 0;
+          console.log('Updated corner radius:', radiusValue.textContent);
+        }
+      } else {
+        console.log('Radius element not found');
+      }
+
+      // Update opacity
+      if (opacityEl) {
+        const opacity = Math.round((data.visual?.opacity || 1) * 100);
+        opacityEl.textContent = `${opacity}%`;
+        console.log('Updated opacity:', opacityEl.textContent);
+      } else {
+        console.log('Opacity element not found');
+      }
+
+      // Update blend mode
+      if (blendEl) {
+        const blendMode = data.visual?.blendMode || 'NORMAL';
+        blendEl.textContent = interpretBlendMode(blendMode);
+        console.log('Updated blend mode:', blendEl.textContent);
+      } else {
+        console.log('Blend mode element not found');
+      }
+
+      // Update shadow
+      if (shadowEl) {
+        if (data.visual?.effects && data.visual.effects.length > 0) {
+          const shadow = data.visual.effects.find(effect => effect.type === 'DROP_SHADOW');
+          shadowEl.textContent = shadow ? 'Enabled' : 'None';
+          console.log('Updated shadow:', shadowEl.textContent);
+        } else {
+          shadowEl.textContent = 'None';
+          console.log('No shadow effects found');
+        }
+      } else {
+        console.log('Shadow element not found');
+      }
+    }
+
+    // Update the window.onmessage handler
+    window.onmessage = async (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      console.log('UI received message:', msg.type, msg);
+      
+      if (msg.type === 'selection') {
+        console.log('Processing selection:', msg.data);
+              currentSelection = msg.data;
+        if (msg.data.items.length > 0) {
+          const selectedItem = msg.data.items[0];
+          console.log('Updating with first item:', selectedItem);
+          
+          // Update selection title
+          const nameEl = document.querySelector('.selection-name');
+          const typeEl = document.querySelector('.selection-type');
+          if (nameEl && typeEl) {
+            nameEl.textContent = selectedItem.name;
+            typeEl.textContent = selectedItem.type.charAt(0) + selectedItem.type.slice(1).toLowerCase();
+          }
+          
+          updateSectionVisibility(selectedItem);
+          updateLayoutProperties(selectedItem);
+          updateTextProperties(selectedItem);
+          updateVisualProperties(selectedItem);
+        }
+      } else if (msg.type === 'raw-node-data') {
+        console.log('Processing raw node data:', msg.data);
+        console.log('Raw node layout data:', msg.data.layout);
+        
+        // Update selection title
+        const nameEl = document.querySelector('.selection-name');
+        const typeEl = document.querySelector('.selection-type');
+        if (nameEl && typeEl && msg.data) {
+          nameEl.textContent = msg.data.name;
+          typeEl.textContent = msg.data.type.charAt(0) + msg.data.type.slice(1).toLowerCase();
+        }
+        
+        updateSectionVisibility(msg.data);
+        updateLayoutProperties(msg.data);
+        updateTextProperties(msg.data);
+        updateVisualProperties(msg.data);
+      } else if (msg.type === 'plugin-status') {
+        pluginStatus.textContent = msg.message;
+      }
+    };
+
+    // Notify plugin that UI is ready
+    parent.postMessage({ pluginMessage: { type: 'ready' } }, '*');
+
+    function moveToDefinedProperties(propertyBlock) {
+      const section = propertyBlock.closest('.section');
+      const mainGrid = section.querySelector('.properties-grid');
+      propertyBlock.classList.remove('undefined');
+      mainGrid.appendChild(propertyBlock);
+    }
+
+    function moveToUndefinedProperties(propertyBlock) {
+      const section = propertyBlock.closest('.section');
+      const undefinedGrid = section.querySelector('.undefined-properties .properties-grid');
+      propertyBlock.classList.add('undefined');
+      undefinedGrid.appendChild(propertyBlock);
+    }
+
+    function initPropertyBlocks() {
+      document.querySelectorAll('.property-block').forEach(block => {
+        // Store original values when initializing
+        const valueElement = block.querySelector('.property-value');
+        if (valueElement) {
+          // Store original values in a consistent format
+          if (block.dataset.property === 'position' || 
+              block.dataset.property === 'size' || 
+              block.dataset.property === 'constraints' || 
+              block.dataset.property === 'sizing' || 
+              block.dataset.property === 'padding') {
+            const multiValues = valueElement.querySelectorAll(
+              '.property-position-value, .property-size-value, ' +
+              '.property-constraints-value, .property-sizing-value, ' +
+              '.property-padding-value'
+            );
+            // Store values without labels
+            const values = Array.from(multiValues).map(val => {
+              // Remove any label prefixes (X:, Y:, T:, etc.)
+              return val.textContent.replace(/^[XYTRBLHV]:?\s*/, '').trim();
+            });
+            valueElement.dataset.originalContent = values.join(',');
+          } else {
+            valueElement.dataset.originalContent = valueElement.innerHTML;
+          }
+        }
+
+        if (!block.classList.contains('non-editable')) {
+          // Add reset button if it doesn't exist
+          if (!block.querySelector('.reset-button')) {
+            const resetButton = document.createElement('button');
+            resetButton.className = 'reset-button';
+            resetButton.title = 'Reset to original value';
+            block.appendChild(resetButton);
+
+            resetButton.addEventListener('click', (e) => {
+              e.stopPropagation();
+              if (valueElement && valueElement.dataset.originalContent) {
+                const isMultiInput = block.dataset.property === 'padding' || 
+                                   block.dataset.property === 'position' || 
+                                   block.dataset.property === 'size' || 
+                                   block.dataset.property === 'constraints' || 
+                                   block.dataset.property === 'sizing';
+                
+                if (isMultiInput) {
+                  const values = valueElement.dataset.originalContent.split(',');
+                  const multiValues = valueElement.querySelectorAll(
+                    '.property-position-value, .property-size-value, ' +
+                    '.property-constraints-value, .property-sizing-value, ' +
+                    '.property-padding-value'
+                  );
+                  
+                  multiValues.forEach((val, index) => {
+                    if (index < values.length) {
+                      // Clear existing content
+                      val.innerHTML = '';
+                      // Set new value (labels are handled by CSS ::before)
+                      val.textContent = values[index];
+                    }
+                  });
+                } else {
+                  valueElement.innerHTML = valueElement.dataset.originalContent;
+                }
+                block.classList.remove('manually-edited');
+                block.classList.remove('editing');
+              }
+            });
+          }
+
+          block.addEventListener('click', (e) => {
+            // Prevent editing if block is non-editable
+            if (block.classList.contains('non-editable') || e.target.closest('.reset-button')) {
+              return;
+            }
+
+            const valueElement = block.querySelector('.property-value');
+            if (!valueElement) return;
+
+            // Define which properties should show dropdowns vs numeric inputs vs multi-inputs
+            const dropdownProperties = {
+              'overflow': ['Visible', 'Hidden', 'Auto'],
+              'direction': ['Row', 'Column'],
+              'align': ['Flex Start', 'Center', 'Flex End', 'Space Between'],
+              'justify': ['Flex Start', 'Center', 'Flex End', 'Space Between', 'Space Around'],
+              'positioning': ['Absolute', 'Relative'],
+              'blend': ['Normal', 'Multiply', 'Screen', 'Overlay']
+            };
+
+            const numericProperties = ['z-index', 'gap', 'rotation'];
+            
+            const multiInputProperties = {
+              'padding': {
+                selector: '.property-padding-value',
+                labels: ['T: ', 'R: ', 'B: ', 'L: ']
+              },
+              'position': {
+                selector: '.property-position-value',
+                labels: ['X: ', 'Y: ']
+              },
+              'size': {
+                selector: '.property-size-value',
+                labels: ['X: ', 'Y: ']
+              },
+              'constraints': {
+                selector: '.property-constraints-value',
+                labels: ['H: ', 'V: ']
+              },
+              'sizing': {
+                selector: '.property-sizing-value',
+                labels: ['H: ', 'V: ']
+              }
+            };
+
+            // Handle multi-input properties
+            if (multiInputProperties[block.dataset.property]) {
+              block.classList.add('editing');
+              
+              const config = multiInputProperties[block.dataset.property];
+              const multiValues = valueElement.querySelectorAll(config.selector);
+              
+              // Store original values without labels
+              const originalValues = Array.from(multiValues).map(val => {
+                return val.textContent.replace(/^[XYTRBLHV]:?\s*/, '').trim();
+              });
+              valueElement.dataset.originalContent = originalValues.join(',');
+
+              multiValues.forEach((val, index) => {
+                const originalValue = originalValues[index];
+                
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = originalValue;
+                input.dataset.originalValue = originalValue;
+                input.dataset.index = index;
+                
+                // Set consistent styling for all multi-input blocks
+                input.style.width = `${Math.max(30, originalValue.length * 8)}px`;
+                input.style.minWidth = '30px';
+                input.style.fontSize = '11px';
+                input.style.fontWeight = '500';
+                input.style.lineHeight = '1';
+                input.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Inter", sans-serif';
+                input.style.height = '20px';
+                input.style.textAlign = 'center';
+                
+                // Special styling for position inputs
+                if (val.classList.contains('property-position-value')) {
+                  input.style.width = 'fit-content';
+                  input.style.minWidth = '25px';
+                  input.style.maxWidth = '60px';
+                  input.style.padding = '0 2px';
+                  input.style.boxSizing = 'border-box';
+                  input.style.flex = '0 1 auto';
+                  
+                  const initialWidth = Math.max(25, input.value.length * 8);
+                  input.style.width = `${initialWidth}px`;
+                  
+                  input.addEventListener('input', function(e) {
+                    const value = e.target.value.replace(/[^0-9.-]/g, '');
+                    e.target.value = value;
+                    const width = Math.max(25, Math.min(60, value.length * 8 + 4));
+                    e.target.style.width = width + 'px';
+                  });
+                }
+                
+                // Clear existing content and add input
+                val.innerHTML = '';
+                val.appendChild(input);
+                
+                if (index === 0) {
+                  input.focus();
+                  input.select();
+                }
+
+                // Handle Enter and Escape
+                input.addEventListener('keydown', (e) => {
+                  if (e.key === 'Enter') {
+                    const allInputs = Array.from(valueElement.querySelectorAll('input'));
+                    const hasChanges = allInputs.some(input => input.value !== input.dataset.originalValue);
+                    
+                    // Update values consistently
+                    allInputs.forEach((input, i) => {
+                      const container = multiValues[i];
+                      if (container) {
+                        // Clear existing content
+                        container.innerHTML = '';
+                        
+                        // For position values, we need to handle X: and Y: labels
+                        if (container.classList.contains('property-position-value')) {
+                          // Create a span to hold the value
+                          const valueSpan = document.createElement('span');
+                          valueSpan.textContent = input.value;
+                          container.appendChild(valueSpan);
+                        } else if (container.classList.contains('property-size-value')) {
+                          // Size values also use CSS ::before for X: and Y:
+                          const valueSpan = document.createElement('span');
+                          valueSpan.textContent = input.value;
+                          container.appendChild(valueSpan);
+                        } else if (container.classList.contains('property-padding-value')) {
+                          // Padding values use data-label attribute
+                          const valueSpan = document.createElement('span');
+                          valueSpan.textContent = input.value;
+                          container.appendChild(valueSpan);
+                        } else if (container.classList.contains('property-constraints-value')) {
+                          // Constraints use CSS ::before for H: and V:
+                          const valueSpan = document.createElement('span');
+                          valueSpan.textContent = input.value;
+                          container.appendChild(valueSpan);
+                        } else if (container.classList.contains('property-sizing-value')) {
+                          // Sizing uses CSS ::before for H: and V:
+                          const valueSpan = document.createElement('span');
+                          valueSpan.textContent = input.value;
+                          container.appendChild(valueSpan);
+                        }
+                      }
+                    });
+                    
+                    // Store new values in the same format
+                    valueElement.dataset.originalContent = allInputs.map(input => input.value).join(',');
+
+                    if (hasChanges) {
+                      block.classList.add('manually-edited');
+                    }
+                    block.classList.remove('editing');
+                  } else if (e.key === 'Escape') {
+                    const values = valueElement.dataset.originalContent.split(',');
+                    multiValues.forEach((val, i) => {
+                      if (i < values.length) {
+                        val.innerHTML = '';
+                        const valueSpan = document.createElement('span');
+                        valueSpan.textContent = values[i];
+                        val.appendChild(valueSpan);
+                      }
+                    });
+                    block.classList.remove('editing');
+                  }
+                });
+              });
+
+              // Handle clicking outside
+              const handleClickOutside = (e) => {
+                if (!block.contains(e.target)) {
+                  const allInputs = Array.from(valueElement.querySelectorAll('input'));
+                  const hasChanges = allInputs.some(input => input.value !== input.dataset.originalValue);
+                  
+                  // Update values consistently
+                  allInputs.forEach((input, i) => {
+                    const container = multiValues[i];
+                    if (container) {
+                      // Clear existing content
+                      container.innerHTML = '';
+                      
+                      // For position values, we need to handle X: and Y: labels
+                      if (container.classList.contains('property-position-value')) {
+                        // Create a span to hold the value
+                        const valueSpan = document.createElement('span');
+                        valueSpan.textContent = input.value;
+                        container.appendChild(valueSpan);
+                      } else if (container.classList.contains('property-size-value')) {
+                        // Size values also use CSS ::before for X: and Y:
+                        const valueSpan = document.createElement('span');
+                        valueSpan.textContent = input.value;
+                        container.appendChild(valueSpan);
+                      } else if (container.classList.contains('property-padding-value')) {
+                        // Padding values use data-label attribute
+                        const valueSpan = document.createElement('span');
+                        valueSpan.textContent = input.value;
+                        container.appendChild(valueSpan);
+                      } else if (container.classList.contains('property-constraints-value')) {
+                        // Constraints use CSS ::before for H: and V:
+                        const valueSpan = document.createElement('span');
+                        valueSpan.textContent = input.value;
+                        container.appendChild(valueSpan);
+                      } else if (container.classList.contains('property-sizing-value')) {
+                        // Sizing uses CSS ::before for H: and V:
+                        const valueSpan = document.createElement('span');
+                        valueSpan.textContent = input.value;
+                        container.appendChild(valueSpan);
+                      }
+                    }
+                  });
+                  
+                  // Store new values in the same format
+                  valueElement.dataset.originalContent = allInputs.map(input => input.value).join(',');
+
+                  if (hasChanges) {
+                    block.classList.add('manually-edited');
+                  }
+                  block.classList.remove('editing');
+                  document.removeEventListener('click', handleClickOutside);
+                }
+              };
+
+              setTimeout(() => {
+                document.addEventListener('click', handleClickOutside);
+              }, 0);
+
+              return;
+            }
+          });
+
+          // Handle Enter key to confirm edit
+          block.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && block.classList.contains('editing')) {
+              const valueElement = block.querySelector('.property-value');
+              const input = valueElement.querySelector('input');
+              if (input) {
+                valueElement.textContent = input.value;
+                if (input.value !== valueElement.dataset.originalContent) {
+                  block.classList.add('manually-edited');
+                }
+                block.classList.remove('editing');
+              }
+            }
+          });
+
+          // Handle Escape key to cancel edit
+          block.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && block.classList.contains('editing')) {
+              const valueElement = block.querySelector('.property-value');
+              if (valueElement && valueElement.dataset.originalContent) {
+                valueElement.innerHTML = valueElement.dataset.originalContent;
+                block.classList.remove('editing');
+              }
+            }
+          });
+        }
+      });
+
+      // Handle clicking outside to exit edit mode
+      document.addEventListener('click', (e) => {
+        document.querySelectorAll('.property-block.editing').forEach(block => {
+          if (!block.contains(e.target)) {
+            confirmEdit(block);
+          }
+        });
+      });
+    }
+
+    function confirmEdit(block) {
+      const valueElement = block.querySelector('.property-value');
+      if (!valueElement) return;
+
+      const inputs = valueElement.querySelectorAll('input');
+      let hasChanges = false;
+
+      // Check if any input values have changed
+      inputs.forEach(input => {
+        if (input.value !== input.dataset.originalValue) {
+          hasChanges = true;
+        }
+      });
+
+      if (hasChanges) {
+        if (inputs.length > 1) {
+          // Multi-value property
+          const multiValues = valueElement.querySelectorAll('.property-position-value, .property-size-value, .property-constraints-value, .property-sizing-value, .property-padding-value');
+          multiValues.forEach((val, index) => {
+            const input = val.querySelector('input');
+            if (input) {
+              val.innerHTML = '';
+              const labelSpan = document.createElement('span');
+              labelSpan.textContent = input.dataset.qualifier;
+              val.appendChild(labelSpan);
+              val.appendChild(document.createTextNode(input.value));
+            }
+          });
+      } else {
+          // Single value property
+          valueElement.textContent = inputs[0].value;
+        }
+        block.classList.add('manually-edited');
+      } else {
+        // No changes, restore original content
+        valueElement.innerHTML = valueElement.dataset.originalContent;
+      }
+
+      block.classList.remove('editing');
+    }
+
+    function cancelEdit(block) {
+      const valueElement = block.querySelector('.property-value');
+      if (valueElement && valueElement.dataset.originalContent) {
+        valueElement.innerHTML = valueElement.dataset.originalContent;
+        block.classList.remove('editing');
+      }
+    }
+
+    // Initialize property blocks when document is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      initPropertyBlocks();
+    });
+
+    // Direct fix for position blocks displaying JSON arrays
+    document.addEventListener('DOMContentLoaded', function() {
+      // Function to fix position blocks that are displaying JSON arrays
+      function fixPositionBlocks() {
+        document.querySelectorAll('.property-block[data-property="position"] .property-value').forEach(valueElement => {
+          const content = valueElement.textContent.trim();
+          if (content.startsWith('[') && content.endsWith(']')) {
+            try {
+              // Parse JSON array and distribute to position values
+              const values = JSON.parse(content);
+              if (Array.isArray(values) && values.length === 2) {
+                // Get the position containers
+                const positionValues = valueElement.querySelectorAll('.property-position-value');
+                if (positionValues.length === 2) {
+                  positionValues[0].textContent = values[0];
+                  positionValues[1].textContent = values[1];
+                }
+              }
+            } catch (e) {
+              console.error('Error fixing position block:', e);
+            }
+          }
+        });
+      }
+      
+      // Call immediately and set up interval to keep checking
+      fixPositionBlocks();
+      setInterval(fixPositionBlocks, 500); // Check every half second
+    });
+  </script>
+</body>
+</html> 
+</rewritten_file>
