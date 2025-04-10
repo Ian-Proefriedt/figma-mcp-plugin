@@ -3,10 +3,11 @@
 ## Table of Contents
 1. [Overview](#overview)
 2. [Current Implementation](#current-implementation)
-3. [Proposed Changes](#proposed-changes)
-4. [Implementation Plan](#implementation-plan)
-5. [Testing Strategy](#testing-strategy)
-6. [Related Documentation](#related-documentation)
+3. [Property Block Types](#property-block-types)
+4. [Proposed Changes](#proposed-changes)
+5. [Implementation Plan](#implementation-plan)
+6. [Testing Strategy](#testing-strategy)
+7. [Related Documentation](#related-documentation)
 
 ## Core Philosophy
 - Focus on accurate data detection and passing to Cursor
@@ -34,501 +35,370 @@
    - Detects properties from Figma data
    - Updates property blocks with detected values
 
-## Implementation Strategy
+## Property Block Types
 
-### 1. Cleanup Phase
-**Keep:**
-1. Core Data Flow
-```javascript
-window.onmessage = async (event) => {
-    const msg = event.data.pluginMessage;
-    if (!msg) {
-        console.error('Invalid message received');
-        return;
-    }
-    // Core message handling
-}
-```
+The plugin features four distinct types of property blocks:
 
-2. Section Management
-```javascript
-function updateSectionVisibility(data) {
-    // Section visibility logic
-}
-```
+1. **Single-Input Blocks**
+   - One value per property (e.g., Z-Index, Gap, Rotation)
+   - Basic text/number input fields
 
-3. Data Detection Functions
-```javascript
-function isActuallyInAutoLayoutDespiteBeingAbsolute(data) {
-    // Auto layout detection logic
-}
-```
+2. **Multi-Input Blocks**
+   - Single property with multiple related values
+   - Examples: Padding (T,R,B,L), Size (X,Y), Position (X,Y)
 
-4. Core Plugin Structure
-- `.section` containers
-- Section headers
-- Selection name/type display
-- Plugin status display
+3. **Dropdown Blocks**
+   - Properties with predefined value sets
+   - Examples: Type, Direction, Overflow, Constraints
 
-**Remove:**
-1. All Property Block Related Functions
-```javascript
-initPropertyBlocks()
-moveToDefinedProperties()
-moveToUndefinedProperties()
-```
+4. **Specialized Multi-Input Blocks**
+   - Color: Hex code string + opacity percentage
+   - Stroke: Type dropdown + thickness value
 
-2. All Property Block HTML
-```html
-<div class="property-block">...</div>
-```
+Each block type requires specific behaviors for property detection, display, validation, and potential editing.
 
-3. All Property Block CSS
-```css
-.property-block { ... }
-.property-value { ... }
-.property-label { ... }
-```
+## Proposed Changes
 
-4. All Property Block Event Handlers
-```javascript
-block.addEventListener('click', ...)
-resetButton.addEventListener('click', ...)
-```
+The refactored property block implementation will focus on:
 
-5. All UI Update Logic in update functions
-```javascript
-document.querySelector('[data-property="..."]')
-```
+1. **Component-Based Architecture**
+   - Create modular, reusable property block components
+   - Use composition with behaviors for flexibility
+   - Improve code maintainability and testability
 
-### 2. Implementation Order
+2. **Enhanced User Experience**
+   - Consistent interaction patterns across all block types
+   - Clear visual states (default, editing, modified)
+   - Improved validation and error feedback
 
-1. **Single Number Input Blocks** (z-index, rotation, gap, radius)
-   - Basic display
-   - Value storage
-   - Edit functionality
-   - Validation
+3. **Optimized Performance**
+   - Minimize DOM operations
+   - Use event delegation
+   - Efficient state management
 
-2. **Dropdown Blocks** (overflow, positioning, blend)
-   - Option selection
-   - Value validation
-   - Data storage
+## Implementation Plan
 
-3. **Multi-Input Blocks** (position, size, padding)
-   - Multiple value handling
-   - CSS labels
-   - Complex validation
+The implementation of the property block refactor will follow a phased approach with clear milestones and deliverables. This plan ensures that we can incrementally build and test each component while maintaining the existing functionality.
 
-### 3. Block Types and Data Structure
+### Phase 1: Foundation (Week 1)
 
-```javascript
-// Single Number Inputs
-{
-    type: "number",
-    properties: ["z-index", "rotation", "gap", "radius"],
-    dataFormat: "number",
-    validation: "numeric"
-}
+1. **Setup & Cleanup**
+   - Create branch for refactor work
+   - Remove existing property block code
+   - Establish basic CSS variables and design tokens
+   - Create empty behavior classes
 
-// Multi-Number Inputs
-{
-    type: "multi-number",
-    properties: ["position", "size", "constraints", "sizing", "padding"],
-    dataFormat: "array",
-    labels: {
-        position: ["X:", "Y:"],
-        size: ["X:", "Y:"],
-        constraints: ["H:", "V:"],
-        sizing: ["H:", "V:"],
-        padding: ["T:", "R:", "B:", "L:"]
-    }
-}
+2. **Core Component Architecture**
+   - Implement base `PropertyBlock` class
+   - Create behavior system architecture
+   - Build basic state management
+   - Setup event delegation system
 
-// Dropdowns
-{
-    type: "select",
-    properties: ["type", "direction", "align", "justify", "overflow", "positioning", "blend"],
-    options: {
-        type: ["Flex", "Block"],
-        direction: ["Row", "Column"],
-        align: ["Flex Start", "Center", "Flex End", "Space Between"]
-    }
-}
-```
+3. **Deliverables**
+   - Working base component with state transitions
+   - Unit tests for core functionality
+   - Documentation of architecture decisions
 
-### 3.1 Multi-Input Block Behavior
+### Phase 2: Basic Block Types (Week 2)
 
-1. **State Management**
-   - States (normal, edit, modified) apply to entire multi-input block
-   - State changes affect whole block, not individual value sections
-   - Undo functionality resets all values in block
+1. **Single-Input Blocks**
+   - Implement `NumberInputBehavior`
+   - Create basic number input components
+   - Add validation logic
+   - Test with z-index, rotation, and gap properties
 
-2. **Dropdown Interaction**
-   - Each value section (e.g., "H: Left", "V: Stretch") has clickable area for dropdown
-   - Only one dropdown can be open at a time within a block
-   - Clicking another value section:
-     - Closes current dropdown
-     - Opens new dropdown
-     - Maintains block's edit state
-   - Clicking outside block:
-     - Closes any open dropdown
-     - Checks for value changes
-     - Updates block state accordingly
+2. **Dropdown Blocks**
+   - Implement `DropdownBehavior`
+   - Create dropdown component with options
+   - Add selection logic
+   - Test with type, overflow, and positioning properties
 
-3. **Visual Structure**
-   - One cohesive block with main property label
-   - Individual value sections with their own labels
-   - Each value section shows current value and dropdown indicator
+3. **Deliverables**
+   - Functional single-input blocks with all states
+   - Functional dropdown blocks with all states
+   - Integration tests for property detection and display
 
-### 4. Data Flow and State Management
+### Phase 3: Advanced Block Types (Week 3)
 
-1. **Data Storage**
-   - Values stored in `dataset.originalContent` as JSON arrays
-   - Format optimized for Cursor to read and implement
-   - Example formats:
-     ```javascript
-     // Single value
-     element.dataset.originalContent = "100";
-     
-     // Multi-value (position, size, etc.)
-     element.dataset.originalContent = JSON.stringify([100, 200]);
-     
-     // String value (overflow, blend, etc.)
-     element.dataset.originalContent = "HIDDEN";
-     ```
+1. **Multi-Input Blocks**
+   - Implement `MultiInputBehavior`
+   - Create containers for multiple inputs
+   - Add coordinated state management
+   - Test with position, size, and padding properties
 
-2. **Block States**
-   - Default: Displaying detected value
-     - Shows property label and value
-     - No user interaction active
-   - Editing: User can modify value
-     - Type-specific variations:
-       - Number inputs: Numeric keyboard
-       - String inputs: Text input
-       - Multi-inputs: Multiple fields
-   - Modified: Value has been manually changed
-     - Can reset to original detected value
-     - Can enter edit state again
-   - Locked: Cannot be edited
-     - Permanent: Always locked (property-specific)
-     - Conditional: Locked based on other properties
+2. **Specialized Multi-Input Blocks**
+   - Implement specialized behaviors for color and stroke
+   - Add property-specific validation
+   - Integrate with existing data structures
 
-3. **State Implementation**
-   ```javascript
-   // Data attributes
-   data-state="default" | "editing" | "modified" | "locked"
-   data-lock-type="permanent" | "conditional"
-   
-   // CSS classes
-   .property-block
-   .property-block.editing
-   .property-block.modified
-   .property-block.locked
-   ```
+3. **Deliverables**
+   - Complete set of working property blocks
+   - All state transitions and validations functional
+   - Full test coverage for all block types
 
-4. **Concurrent Updates**
-   - Plugin runs in dev mode
-   - No automatic updates from Figma during editing
-   - Edge case of multiple users editing same file:
-     - Not a concern for current implementation
-     - Will be addressed in future public release
-     - No special handling needed now
+### Phase 4: Integration & Optimization (Week 4)
 
-### 5. Validation Rules and Format Requirements
+1. **Layer Tree Integration**
+   - Connect property blocks to layer selection
+   - Implement property detection for all layer types
+   - Add efficient update mechanism
 
-1. **Number Input Patterns**
-   - Each number property will have defined min/max ranges
-   - Some properties may support wrap-around behavior
-   - All number inputs:
-     - Prevent non-numeric input
-     - Enforce property-specific ranges
-     - May support decimal values if needed
-   ```javascript
-   // Pattern for number properties
-   {
-       min: number,
-       max: number,
-       wrapAround: boolean,
-       allowDecimals: boolean
-   }
+2. **Send to Cursor Feature**
+   - Implement the send to Cursor button
+   - Create confirmation dialog
+   - Add data transformation for Cursor format
 
-   // Examples
-   {
-       "z-index": {
-           min: -9999,
-           max: 9999,
-           wrapAround: false,
-           allowDecimals: false
-       },
-       "rotation": {
-           min: 0,
-           max: 360,
-           wrapAround: true,  // 380° = 20°, -20° = 340°
-           allowDecimals: false
-       }
-   }
-   ```
+3. **Performance Optimization**
+   - Conduct performance testing
+   - Optimize render cycles
+   - Minimize DOM operations
 
-2. **Dropdown Patterns**
-   - Options defined in semantic CSS format for Cursor
-   - Each dropdown property will have its complete set of valid options
-   - Options will be consistent with Figma's available values
-   ```javascript
-   // Pattern for dropdown properties
-   {
-       options: string[],
-       format: "semantic-css"
-   }
+4. **Deliverables**
+   - Fully functional plugin with refactored property blocks
+   - Performance metrics showing improvements
+   - Complete documentation of the implementation
 
-   // Examples
-   {
-       "align": {
-           options: ["flex-start", "flex-end", "center", "space-between"],
-           format: "semantic-css"
-       }
-   }
-   ```
+### Success Criteria
 
-3. **Multi-Input Patterns**
-   - Value labels use first letter of each dimension
-   - Consistent structure across all multi-input properties
-   - Labels positioned next to their respective inputs
-   ```javascript
-   // Pattern for multi-input properties
-   {
-       labels: string[],
-       format: "first-letter-labels"
-   }
+The implementation will be considered successful when:
 
-   // Examples
-   {
-       "position": ["X:", "Y:"],
-       "constraints": ["H:", "V:"],
-       "padding": ["T:", "R:", "B:", "L:"]
-   }
-   ```
+1. All property block types render correctly and maintain state
+2. Property detection works reliably for all Figma layer types
+3. Editing and validation functions work as expected
+4. Send to Cursor functionality correctly transmits data
+5. Performance is equal to or better than the previous implementation
+6. Code is well-documented and maintainable
 
-4. **Input Validation**
-   - Prevent invalid input at the source
-   - Visual feedback for invalid values:
-     ```css
-     .property-block.editing.invalid {
-         border-color: red;
-     }
-     ```
-   - No submission of invalid values
-   - Clear error states
+### Dependencies and Risks
 
-5. **Unit Handling Patterns**
-   - Default: pixels (implied, not displayed)
-   - Special cases handled consistently
-   - Three possible display approaches:
-     1. Label next to value
-     2. Non-editable suffix
-     3. Auto-appended after submission
-   - Auto values: No units required
-   ```javascript
-   // Pattern for unit handling
-   {
-       default: "px",
-       specialCases: {
-           [property]: string
-       },
-       display: "label" | "suffix" | "auto"
-   }
+1. **Dependencies**
+   - Figma Plugin API constraints
+   - Existing data detection logic
+   - Cursor integration requirements
 
-   // Examples
-   {
-       default: "px",
-       specialCases: {
-           "rotation": "degrees",
-           "opacity": "percentage"
-       },
-       display: "label"
-   }
-   ```
+2. **Risk Mitigation**
+   - Create detailed fallback mechanisms
+   - Implement feature flags for gradual rollout
+   - Maintain backward compatibility where possible
 
-### 6. Event Handling and State Transitions
+## Testing Strategy
 
-1. **State Entry/Exit Rules**
-   ```javascript
-   // Default State -> Edit State
-   - Trigger: Click on block
-   - Action: Show input with current value
-   
-   // Edit State -> Default State
-   - Trigger: Click outside block
-   - Trigger: Press ESC
-   - Trigger: Submit empty input
-   - Trigger: Submit original value
-   - Action: Display original detected value
-   
-   // Edit State -> Modified State
-   - Trigger: Submit valid new value
-   - Action: Save new value, show undo button
-   
-   // Modified State -> Default State
-   - Trigger: Click undo button
-   - Action: Reset to original detected value
-   
-   // Modified State -> Edit State
-   - Trigger: Click on block
-   - Action: Show input with current modified value
-   ```
+The testing approach for the property block refactor will be practical and focused on direct verification in the Figma plugin environment.
 
-2. **Input Handling**
-   - Empty input on submit:
-     - If from Default state: Show original value
-     - If from Modified state: Show last modified value
-   - Original value on submit:
-     - Always return to Default state
-   - Valid new value on submit:
-     - Save new value
-     - Enter Modified state
-     - Show undo button
+### 1. Manual Testing in Figma Plugin
 
-3. **Keyboard Events**
-   - Enter: Submit current input value
-   - ESC: Cancel edit, return to previous state
-   - Other keys: Standard text input behavior
+1. **Block Type Testing**
+   - Test each property block type with real Figma data
+   - Verify values display correctly for all property types
+   - Check appearance and layout match design requirements
 
-4. **Visual Feedback**
-   ```css
-   /* Default State */
-   .property-block {
-       background-color: rgba(255, 255, 255, 0.06);
-       border-radius: 4px;
-       padding: 4px 8px;
-       height: 28px;
-       display: flex;
-       align-items: center;
-       border: 1px solid transparent;
-   }
-   
-   /* Edit State */
-   .property-block.editing {
-       border-color: #4C8BFF;
-       background-color: var(--section-hover);
-   }
-   
-   /* Modified State */
-   .property-block.modified {
-       /* Standard block styling with undo button */
-   }
-   
-   /* Undo Button */
-   .property-block .undo-button {
-       /* Small button styling */
-   }
-   ```
+2. **State Transition Testing**
+   - Default state: Verify correct value display
+   - Editing state: Test input interaction
+   - Modified state: Verify changes persist correctly
+   - Locked state: Confirm editing is disabled
 
-### 7. Color Values
-```css
-/* Core Colors */
---background: #2c2c2c;
---text: #e0e0e0;
---border: #444444;
---active: #4C8BFF;
---text-secondary: #888888;
---error: #f44336;
-```
+3. **Interaction Testing**
+   - Click behaviors work as expected
+   - Keyboard navigation functions properly
+   - Dropdowns open and close correctly
+   - Reset button restores original values
 
-### 8. Data Flow and Future Features
+### 2. Console Logging
 
-1. **Current Data Flow**
-   - Figma sends raw data via `pluginMessage`
-   - Plugin processes data through update functions:
-     - `updateSectionVisibility`
-     - `updateLayoutProperties`
-     - `updateTextProperties`
-     - `updateVisualProperties`
-   - Values stored in `dataset.originalContent` as JSON arrays
-   - Changes saved locally in plugin
+1. **Strategic Logging Points**
+   - Log state transitions: `console.log("Block entering edit state:", propertyName)`
+   - Log data changes: `console.log("Value changed from:", oldValue, "to:", newValue)`
+   - Log errors: `console.error("Validation failed:", reason)`
 
-2. **Send to Cursor Button**
-   - Will be added to UI
-   - Behavior to be determined:
-     - Always visible vs. appears after changes
-     - Always active vs. enabled after changes
-   - Will send complete layer data when clicked
+2. **Debugging Flags**
+   - Add debug mode toggle: `const DEBUG = true;`
+   - Conditional logging: `if(DEBUG) console.log("Debug info:", data);`
+   - Performance markers: `console.time("render")` and `console.timeEnd("render")`
 
-3. **Future Layer Tree View**
-   - Will be implemented after basic property functionality
-   - Will use:
-     - Cursor data for hierarchy structure
-     - Raw data for property detection
-   - Will allow:
-     - Selection of any layer in hierarchy
-     - Property editing for selected layer
-     - Navigation between layers
+### 3. Test Checklist
 
-4. **Data Validation Approach**
-   - Focus on detection and editing
-   - No strict validation requirements
-   - Allow submission with missing properties
-   - Context-dependent validation to be determined
+**Basic Functionality**
+- [ ] All property block types render correctly
+- [ ] Property values display accurately 
+- [ ] Editing works for all property types
+- [ ] Changes persist after editing
+- [ ] Reset functionality restores original values
 
-### 9. Testing and Debugging
+**Block-Specific Tests**
+- [ ] Number inputs enforce min/max constraints
+- [ ] Dropdowns show all valid options
+- [ ] Multi-input blocks handle all values correctly
+- [ ] Specialized blocks (color, stroke) work as expected
 
-1. **Console Logging**
-   - Log key state changes
-   - Log data flow between Figma and plugin
-   - Log validation results
-   - Log error conditions
-   - Error logs should be distinctly marked compared to regular state changes
-   - Log every state transition for thorough testing
+**Integration Tests**
+- [ ] Property detection works for all Figma node types
+- [ ] Layer selection updates property blocks correctly
+- [ ] Send to Cursor collects and formats data properly
+- [ ] Error states are handled gracefully
 
-2. **Visual Testing**
-   - Test in Figma plugin window
-   - Verify property detection
-   - Verify state transitions
-   - Verify data persistence
-
-3. **Error Handling**
-   - Console logs for debugging
-   - Visual indicators for user-facing errors
-   - Graceful recovery from errors
-
-4. **Incremental Testing Process**
-   - Start with simplest block implementation (single input or dropdown)
-   - Test each state thoroughly before moving to next:
-     a. Default State
-        - Verify base block component styling
-        - Confirm property detection and value display
-        - Ensure consistent behavior from base block component
-     b. Edit State
-        - Verify edit mode entry
-        - Test styling and interaction behavior
-     c. Modified State
-        - Test value submission process
-        - Verify modified state styling
-        - Test reset functionality
-        - Confirm return to default state
-   - Only proceed to more complex blocks after simple block is fully functional
-   - Each implementation step must verify:
-     - Correct property detection
-     - Proper value population
-     - Expected state transitions
-     - Consistent styling
-   - More complex blocks should follow same testing sequence
-   - Even if implementation handles all states automatically, each state must be verified independently
+This streamlined testing approach focuses on practical verification of functionality directly in the Figma plugin environment, using console logging for debugging and issue resolution.
 
 ### 10. Implementation Details
 
-1. **Class Structure**
-   - To be determined based on codebase review
-   - Will focus on minimizing errors and testing time
-   - Will follow existing patterns where possible
+#### Class Structure and Component Architecture
+The implementation will use a Composition with Behaviors approach for maximum flexibility. This approach offers several advantages:
 
-2. **Code Organization**
-   - Separate concerns clearly
-   - Maintain consistent patterns
-   - Document key decisions
+1. **Core Structure**
+   - Base `PropertyBlock` class provides common functionality
+   - Specialized behaviors are added through composition
+   - Each block type only includes behaviors it needs
+   - Clean separation of concerns
+
+2. **Behavior System**
+   - Behaviors are small, focused classes
+   - Each behavior handles one aspect of functionality
+   - Behaviors can be combined as needed
+   - Examples: `EditBehavior`, `ValidationBehavior`, `DropdownBehavior`
+
+3. **Implementation Examples**
+
+   ```javascript
+   // Base property block class
+   class PropertyBlock {
+       constructor(element, options = {}) {
+           this.element = element;
+           this.options = options;
+           this.behaviors = [];
+           this.state = 'default';
+       }
+       
+       addBehavior(behavior) {
+           this.behaviors.push(behavior);
+           behavior.initialize(this);
+           return this;
+       }
+       
+       setState(newState) {
+           this.state = newState;
+           this.element.dataset.state = newState;
+           this.behaviors.forEach(b => b.onStateChange(newState));
+       }
+       
+       // Additional core methods...
+   }
+   
+   // Example: Number input behavior
+   class NumberInputBehavior {
+       initialize(block) {
+           this.block = block;
+           this.setupListeners();
+       }
+       
+       setupListeners() {
+           this.block.element.querySelector('.property-value')
+               .addEventListener('click', () => this.onValueClick());
+       }
+       
+       onValueClick() {
+           if (this.block.state === 'default' || this.block.state === 'modified') {
+               this.block.setState('editing');
+               this.renderInput();
+           }
+       }
+       
+       renderInput() {
+           // Render number input field
+       }
+       
+       onStateChange(newState) {
+           // Handle state changes
+       }
+   }
+   
+   // Example: Dropdown behavior
+   class DropdownBehavior {
+       initialize(block) {
+           this.block = block;
+           this.options = block.options.dropdownOptions || [];
+           this.setupListeners();
+       }
+       
+       setupListeners() {
+           // Setup dropdown-specific listeners
+       }
+       
+       // Dropdown-specific methods...
+   }
+   
+   // Example: Creating a property block
+   function createZIndexBlock(value) {
+       const block = new PropertyBlock(
+           document.querySelector('[data-property="z-index"]'),
+           { min: -9999, max: 9999 }
+       );
+       
+       return block
+           .addBehavior(new NumberInputBehavior())
+           .addBehavior(new ValidationBehavior());
+   }
+   ```
+
+4. **Benefits of this Approach**
+
+   - **Flexibility**: Each property block can have exactly the behaviors it needs
+   - **Maintainability**: Single responsibility principle for each behavior
+   - **Testability**: Behaviors can be tested in isolation
+   - **Scalability**: New behaviors can be added without changing existing code
+   - **Code Reuse**: Behaviors can be shared across different block types
+
+#### Code Organization
+
+1. **File Structure**
+   ```
+   /src
+     /behaviors
+       - base-behavior.js
+       - number-input-behavior.js
+       - dropdown-behavior.js
+       - validation-behavior.js
+     /blocks
+       - property-block.js
+       - single-input-block.js
+       - multi-input-block.js
+     /utils
+       - state-manager.js
+       - event-manager.js
+   ```
+
+2. **Initialization Flow**
+   ```javascript
+   // Main initialization
+   function initPropertyBlocks() {
+       // Create blocks with appropriate behaviors
+       const zIndexBlock = createBlock('z-index', [
+           new NumberInputBehavior(),
+           new ValidationBehavior({ min: -9999, max: 9999 })
+       ]);
+       
+       const typeBlock = createBlock('type', [
+           new DropdownBehavior({
+               options: ['Flex', 'Block']
+           })
+       ]);
+       
+       // And so on for other blocks...
+   }
+   
+   function createBlock(property, behaviors) {
+       const element = document.querySelector(`[data-property="${property}"]`);
+       const block = new PropertyBlock(element);
+       
+       behaviors.forEach(behavior => block.addBehavior(behavior));
+       return block;
+   }
+   ```
 
 3. **Performance Considerations**
-   - Optimize DOM operations
-   - Minimize event listeners
-   - Efficient state management
+   - Event delegation for efficiency
+   - Minimal DOM manipulation
+   - Lazy initialization of complex behaviors
+   - Efficient state transitions
 
 ### 11. Migration Checklist
 
@@ -551,7 +421,7 @@ document.querySelector('[data-property="..."]')
    - [ ] Check all property types
    - [ ] Verify data flow
    - [ ] Test edit functionality
-   - [ ] Validate Cursor integration 
+   - [ ] Validate Cursor integration
 
 ### 12. Button Implementation Plan
 
@@ -853,7 +723,7 @@ document.querySelector('[data-property="..."]')
        - Deploy button implementation
        - Verify deployment
        - Validate button functionality
-       - Finalize deployment 
+       - Finalize deployment
 
 ### 13. Value-Container Implementation
 
@@ -997,7 +867,7 @@ document.querySelector('[data-property="..."]')
    3. Add multi-input support
    4. Implement element type inference
    5. Add special case handling
-   6. Test and validate 
+   6. Test and validate
 
 ## Layer Tree and Property Block Integration
 
@@ -1065,4 +935,5 @@ document.querySelector('[data-property="..."]')
 
 ### External References
 - [Figma Plugin API](https://www.figma.com/plugin-docs/) - Official Figma plugin documentation
-- [Figma UI Components](https://www.figma.com/plugin-docs/api/ui-components/) - Figma UI component reference 
+- [Figma UI Components](https://www.figma.com/plugin-docs/api/ui-components/) - Figma UI component reference
+- [Figma Node Types](https://www.figma.com/plugin-docs/api/nodes/) - Figma node type reference

@@ -5,6 +5,8 @@
  * of Figma nodes. It serves as the source of truth for layout detection.
  */
 
+console.log("Running NEW figma-mcp-plugin version");
+
 /**
  * Determines if a node is ignoring its parent's auto layout
  * @param {SceneNode} node - The node to check
@@ -201,8 +203,6 @@ function extractLayoutProperties(node) {
       vectorPaths: node.vectorPaths,
       vectorNetwork: node.vectorNetwork,
       handleMirroring: node.handleMirroring,
-      pointCount: node.pointCount,
-      pointRadius: node.pointRadius,
       pointCount: node.pointCount,
       pointRadius: node.pointRadius,
       starInnerRadius: node.starInnerRadius,
@@ -944,16 +944,4 @@ function processVectorProperties(node) {
 
 function isVectorType(type) {
   return ["VECTOR", "STAR", "LINE", "ELLIPSE", "POLYGON", "RECTANGLE"].includes(type);
-}
-
-function extractSizeProperties(node) {
-  return {
-    width: { value: node.width, unit: "PIXELS" },
-    height: { value: node.height, unit: "PIXELS" },
-    absolute: {
-      width: (node.absoluteBoundingBox && node.absoluteBoundingBox.width) || 0,
-      height: (node.absoluteBoundingBox && node.absoluteBoundingBox.height) || 0
-    },
-    constraints: node.constraints
-  };
 } 
