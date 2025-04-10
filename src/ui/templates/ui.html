@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Material Components Properties</title>
+  <!-- CSS will be injected here by webpack -->
+</head>
+<body>
+  <div class="plugin-container">
+    <div class="header">
+      <div class="selection-info">
+        <h2 class="selection-name">No Selection</h2>
+        <div class="selection-type">Select an element to view properties</div>
+      </div>
+    </div>
+
+    <div class="sections-container">
+      <div class="section layout-properties" id="layoutSection">
+        <div class="section-header">
+          <h3>Layout</h3>
+          <div class="section-arrow">▼</div>
+        </div>
+        <div class="section-content-wrapper">
+          <div class="section-content">
+            <div class="properties-grid" id="layout-properties"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section position-properties" id="positionSection">
+        <div class="section-header">
+          <h3>Position & Size</h3>
+          <div class="section-arrow">▼</div>
+        </div>
+        <div class="section-content-wrapper">
+          <div class="section-content">
+            <div class="properties-grid" id="position-properties"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section style-properties" id="styleSection">
+        <div class="section-header">
+          <h3>Style</h3>
+          <div class="section-arrow">▼</div>
+        </div>
+        <div class="section-content-wrapper">
+          <div class="section-content">
+            <div class="properties-grid" id="style-properties"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section text-properties" id="textSection">
+        <div class="section-header">
+          <h3>Text</h3>
+          <div class="section-arrow">▼</div>
+        </div>
+        <div class="section-content-wrapper">
+          <div class="section-content">
+            <div class="properties-grid" id="text-properties"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section undefined-properties" id="undefinedSection">
+        <div class="section-header">
+          <h3>Other Properties</h3>
+          <div class="section-arrow">▼</div>
+        </div>
+        <div class="section-content-wrapper">
+          <div class="section-content">
+            <div class="properties-grid" id="undefined-properties"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions-container">
+      <div class="action-buttons">
+        <button id="expandAllBtn">Expand All</button>
+        <button id="collapseAllBtn">Collapse All</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- JavaScript will be injected here by webpack -->
+</body>
+</html> 

@@ -2,16 +2,20 @@
 <html>
 <head>
   <style>
+    /* Core variables */
     :root {
       --background-color: #2c2c2c;
       --text-color: #e0e0e0;
       --border-color: #444444;
       --section-hover: #3e3e3e;
-      --property-background: #383838;
+      --property-background: rgba(255, 255, 255, 0.06);
       --property-text: #cccccc;
+      --property-label: #888888;
+      --accent-color: #4C8BFF;
       --grid-gap: 8px;
     }
 
+    /* Base elements */
     body {
       background-color: var(--background-color);
       color: var(--text-color);
@@ -21,15 +25,21 @@
       font-size: 11px;
     }
 
+    /* Layout containers */
     .plugin-container {
       padding: 0 12px;
       position: relative;
     }
 
+    /* Sections */
     .section {
       margin: 0 -12px;
       border-bottom: 1px solid var(--border-color);
       display: block;
+    }
+
+    .section.hidden {
+      display: none;
     }
 
     .section-header {
@@ -74,23 +84,24 @@
 
     .section-content {
       padding: 8px 12px;
-      max-width: 300px; /* Or whatever maximum width makes sense for your layout */
+      max-width: 300px;
     }
 
-    /* Property Grid */
+    /* Property grid */
     .properties-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: var(--grid-gap);
       max-width: 100%;
     }
 
-    /* Property Blocks */
+    /* Property blocks */
     .property-block {
-      background-color: rgba(255, 255, 255, 0.06);
+      background-color: var(--property-background);
       border-radius: 4px;
       padding: 4px 8px;
       display: flex;
+      justify-content: space-between;
       align-items: center;
       height: 28px;
       min-width: fit-content;
@@ -106,7 +117,14 @@
       border-color: rgba(255, 255, 255, 0.1);
     }
 
-    .property-block .property-value {
+    .property-label {
+      color: var(--property-label);
+      font-size: 11px;
+      white-space: nowrap;
+      margin-right: 12px;
+    }
+
+    .property-value {
       color: var(--property-text);
       font-weight: 500;
       font-size: 11px;
@@ -117,28 +135,22 @@
       display: flex;
       align-items: center;
       flex: 1;
+      flex-direction: row;
     }
 
-    .property-label {
-      color: #888888;
-      font-size: 11px;
-      white-space: nowrap;
-      margin-right: 12px;
-    }
-
-    /* Property Block States */
+    /* Property block states */
     .property-block[data-state="default"] {
-      background-color: rgba(255, 255, 255, 0.06);
+      background-color: var(--property-background);
       border-color: transparent;
     }
 
     .property-block[data-state="editing"] {
-      border-color: #4C8BFF;
+      border-color: var(--accent-color);
       background-color: var(--section-hover);
     }
 
     .property-block[data-state="modified"] {
-      border-color: #4C8BFF;
+      border-color: var(--accent-color);
     }
 
     .property-block[data-state="locked"] {
@@ -146,7 +158,7 @@
       pointer-events: none;
     }
 
-    /* Input styling for edit states */
+    /* Input controls */
     .property-block[data-state="editing"] input,
     .property-block[data-state="editing"] select {
       background: var(--section-hover);
@@ -170,19 +182,58 @@
       height: 24px;
     }
 
-    /* Remove all property-specific styles that will be handled by behaviors */
-    .status-bar {
-      display: none;
+    /* Remove spinner arrows from number inputs */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
     }
 
-    .layer-tree {
-      display: none;
+    /* Standard number input styling */
+    .property-block input[type=number] {
+      width: auto;
+      min-width: 30px;
+      padding: 2px 4px;
+      text-align: center;
+      background-color: var(--background-color);
+      border: 1px solid var(--accent-color);
+      border-radius: 4px;
+      color: var(--text-color);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(76, 139, 255, 0.2);
+      font-size: 11px;
+      font-weight: 500;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
     }
 
-    .raw-data {
-      display: none;
+    /* Labels for multi-input fields */
+    .property-position-value:first-child::before { content: "X: "; }
+    .property-position-value:last-child::before { content: "Y: "; }
+    .property-size-value:first-child::before { content: "X: "; }
+    .property-size-value:last-child::before { content: "Y: "; }
+    .property-constraints-value:first-child::before { content: "H: "; }
+    .property-constraints-value:last-child::before { content: "V: "; }
+    .property-sizing-value:first-child::before { content: "H: "; }
+    .property-sizing-value:last-child::before { content: "V: "; }
+    .property-padding-value::before { content: attr(data-label); }
+
+    /* Common label styling for pseudo-elements */
+    .property-position-value::before,
+    .property-size-value::before,
+    .property-constraints-value::before,
+    .property-sizing-value::before,
+    .property-padding-value::before {
+      color: var(--property-label);
+      font-size: 11px;
+      font-weight: normal;
     }
 
+    /* Color display */
     .property-color {
       display: flex;
       align-items: center;
@@ -216,6 +267,7 @@
       border-left: 1px solid var(--border-color);
     }
 
+    /* Stroke property */
     .property-stroke {
       display: flex;
       align-items: center;
@@ -228,6 +280,16 @@
       text-align: right;
     }
 
+    .property-stroke-weight {
+      flex-shrink: 0;
+      color: var(--property-text);
+      opacity: 0.8;
+      margin-left: 4px;
+      padding-left: 4px;
+      border-left: 1px solid var(--border-color);
+    }
+
+    /* Radius property */
     .property-radius {
       display: flex;
       align-items: center;
@@ -238,37 +300,7 @@
       text-align: right;
     }
 
-    /* Ensure property blocks maintain their layout */
-    .property-block {
-      display: flex !important;
-      justify-content: space-between !important;
-      align-items: center !important;
-      flex-direction: row !important;
-    }
-
-    .property-block .property-value {
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-    }
-
-    /* Reset any nested flex containers */
-    .property-block .property-value > div {
-      width: auto !important;
-      flex: 1 !important;
-    }
-
-    /* Update the CSS for stroke weight */
-    .property-stroke-weight {
-      flex-shrink: 0;
-      color: var(--property-text);
-      opacity: 0.8;
-      margin-left: 4px;
-      padding-left: 4px;
-      border-left: 1px solid var(--border-color);
-    }
-
-    /* Add styles for the selection title */
+    /* Selection title */
     .selection-title {
       padding: 12px;
       border-bottom: 1px solid var(--border-color);
@@ -290,13 +322,13 @@
 
     .selection-type {
       font-size: 11px;
-      color: #888888;
+      color: var(--property-label);
       margin: 4px 0 0 0;
       padding: 0;
       line-height: 1.2;
     }
 
-    /* Add styles for the status indicator */
+    /* Status indicator */
     .status-indicator {
       position: absolute;
       top: 12px;
@@ -316,66 +348,13 @@
       background-color: #ff9800;
     }
 
-    /* Add styles for hidden sections */
-    .section.hidden {
+    /* Utility states */
+    .status-bar, .layer-tree, .raw-data {
       display: none;
     }
 
-    /* Add styles for numeric control */
-    .numeric-control {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .numeric-control button {
-      background: none;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      width: 16px;
-      height: 16px;
-      border-radius: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      font-size: 10px;
-      cursor: pointer;
-    }
-
-    .numeric-control button:hover {
-      background-color: var(--section-hover);
-    }
-
-    .property-block .edit-button {
-      display: none;
-      background: none;
-      border: none;
-      color: var(--text-color);
-      width: 16px;
-      height: 16px;
-      border-radius: 2px;
-      margin-left: 4px;
-      cursor: pointer;
-      opacity: 0.7;
-    }
-
-    .property-block .edit-button:hover {
-      opacity: 1;
-      background-color: var(--section-hover);
-    }
-
-    .property-block .edit-button::before {
-      content: "✎";
-      font-size: 10px;
-    }
-
-    .property-block:not(.editing):hover .edit-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
+    /* Buttons */
+    .property-block .edit-button,
     .property-block .reset-button {
       display: none;
       background: none;
@@ -389,14 +368,26 @@
       opacity: 0.7;
     }
 
+    .property-block .edit-button:hover,
     .property-block .reset-button:hover {
       opacity: 1;
       background-color: var(--section-hover);
     }
 
+    .property-block .edit-button::before {
+      content: "✎";
+      font-size: 10px;
+    }
+
     .property-block .reset-button::before {
       content: "↺";
       font-size: 10px;
+    }
+
+    .property-block:not(.editing):hover .edit-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .property-block.manually-edited .reset-button {
@@ -405,168 +396,17 @@
       justify-content: center;
     }
 
-    /* Remove spinner arrows from number inputs */
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
+    /* Specific styling for dropdown property blocks */
+    .property-block[data-property-type="dropdown"] {
+      display: flex !important; /* Force flex display */
+      flex-direction: row !important; /* Force horizontal layout */
     }
     
-    input[type=number] {
-      -moz-appearance: textfield;
-      appearance: textfield;
-    }
-
-    /* Style numeric inputs to match the screenshot */
-    .property-block.editing input[type=number],
-    .property-block input[type=number] {
-      width: auto;
-      min-width: 30px;
-      padding: 2px 4px;
-      text-align: center;
-      background-color: var(--background-color);
-      border: 1px solid #4C8BFF;
-      border-radius: 4px;
-      color: var(--text-color);
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(76, 139, 255, 0.2);
-      font-size: 11px;
-      font-weight: 500;
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-    }
-
-    /* Specific styling for padding multi-inputs */
-    .property-padding-value input[type=number] {
-      margin-left: 4px;
-    }
-
-    /* Ensure padding inputs have spacing */
-    .property-padding {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-    }
-
-    /* Specific styling for position multi-inputs */
-    .property-position-value input[type=number] {
-      width: fit-content; /* Try to fit content */
-      min-width: 25px;
-      max-width: 60px; /* Limit maximum expansion */
-    }
-
-    /* Consistent styling for all multi-input fields with content-hugging */
-    .property-position-value input[type=number],
-    .property-size-value input[type=number],
-    .property-constraints-value input[type=number],
-    .property-sizing-value input[type=number],
-    .property-padding-value input[type=number] {
-      min-width: unset;
-      width: auto;
-      font-size: 11px;
-      font-weight: 500;
-      height: 20px;
-      line-height: 1;
-      text-align: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-      padding: 0 2px;
-      box-sizing: border-box;
-    }
-
-    /* Container styling updates */
-    .property-position {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      gap: 4px;
-    }
+    /* Remove the special styling for blend mode property - treat it like other dropdowns */
     
-    .property-position-value {
-      flex: 0 0 auto; /* Don't grow, don't shrink, size based on content */
-      min-width: auto;
+    .property-block:hover {
+      border-color: rgba(255, 255, 255, 0.1);
     }
-    
-    /* Label style for X: and Y: */
-    .property-position-value:first-child::before,
-    .property-position-value:last-child::before {
-      flex: 0 0 auto; /* Don't grow or shrink */
-    }
-
-    /* Remove duplicate pseudo-element definitions */
-    .property-position-value:first-child::before {
-      content: "X: ";
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    .property-position-value:last-child::before {
-      content: "Y: ";
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    .property-size-value:first-child::before {
-      content: "X: ";
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    .property-size-value:last-child::before {
-      content: "Y: ";
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    .property-constraints-value:first-child::before {
-      content: "H: ";
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    .property-constraints-value:last-child::before {
-      content: "V: ";
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    .property-sizing-value:first-child::before {
-      content: "H: ";
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    .property-sizing-value:last-child::before {
-      content: "V: ";
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    .property-padding-value::before {
-      content: attr(data-label);
-      color: #888888;
-      font-size: 11px;
-      font-weight: normal;
-    }
-
-    /* Ensure consistent styling for value spans */
-    .property-position-value span,
-    .property-size-value span,
-    .property-constraints-value span,
-    .property-sizing-value span,
-    .property-padding-value span {
-      font-weight: 500;
-      font-size: 11px;
-      line-height: 1;
-    }
-
   </style>
 </head>
 <body>
@@ -652,6 +492,425 @@
 
   <!-- Load utility scripts -->
   <script>
+    // ======================================================
+    // GLOBAL INITIALIZATION - These must be defined first 
+    // ======================================================
+    
+    // Centralized logging system - defined first to ensure it's available everywhere
+    window.Logger = (function() {
+      // Define constants directly rather than as object properties
+      const DEBUG = 0;
+      const INFO = 1;
+      const WARN = 2;
+      const ERROR = 3;
+      
+      // Debug flag for production vs development
+      const isDebug = false;
+      
+      // Current log level
+      const currentLevel = isDebug ? DEBUG : INFO;
+      
+      // Create a resilient logger that doesn't depend on property references
+      return {
+        // Expose log levels as constants
+        LEVELS: {
+          DEBUG: DEBUG,
+          INFO: INFO,
+          WARN: WARN,
+          ERROR: ERROR
+        },
+        
+        // Debug flag for production vs development
+        DEBUG: isDebug,
+        
+        // Current log level
+        level: currentLevel,
+        
+        // Prefix for all log messages
+        prefix: '[MCP] ',
+        
+        // Enable/disable specific logging categories
+        categories: {
+          properties: true,  // Property value logs 
+          nodeData: true,    // Raw node data logs
+          ui: true           // UI update logs
+        },
+        
+        // Debug logs - detailed information
+        debug: function(component, message, data) {
+          if (currentLevel <= DEBUG && this.categories[component.toLowerCase()] !== false) {
+            console.debug(`${this.prefix}${component}: ${message}`, data || '');
+          }
+        },
+        
+        // Info logs - normal operation information
+        info: function(component, message, data) {
+          if (currentLevel <= INFO) {
+            console.info(`${this.prefix}${component}: ${message}`, data || '');
+          }
+        },
+        
+        // Warning logs - potentially problematic situations
+        warn: function(component, message, data) {
+          if (currentLevel <= WARN) {
+            console.warn(`${this.prefix}${component}: ${message}`, data || '');
+          }
+        },
+        
+        // Error logs - failures that need attention
+        error: function(component, message, data) {
+          if (currentLevel <= ERROR) {
+            console.error(`${this.prefix}${component}: ${message}`, data || '');
+          }
+        }
+      };
+    })();
+    
+    // ======================================================
+    // UTILITY FUNCTIONS - Define before they are used
+    // ======================================================
+    
+    // Safe execution wrapper to standardize error handling
+    function safeExecute(fn, errorMessage = 'Operation failed', fallback = null) {
+      try {
+        return fn();
+      } catch (error) {
+        console.error(`${errorMessage}: ${error.message}`);
+        return fallback;
+      }
+    }
+    
+    // UI Factory for creating elements with standard patterns
+    const UIFactory = {
+      // Create an element with common attributes
+      createElement(tagName, options = {}) {
+        const element = document.createElement(tagName);
+        
+        if (options.className) element.className = options.className;
+        if (options.id) element.id = options.id;
+        if (options.textContent) element.textContent = options.textContent;
+        
+        return element;
+      },
+      
+      // Create a button with standard properties
+      createButton(text, onClick) {
+        const button = this.createElement('button', { textContent: text });
+        if (onClick) button.addEventListener('click', onClick);
+        return button;
+      }
+    };
+    
+    // Ensure PropertyRegistry is initialized as a global variable
+    window.PropertyRegistry = {
+      // Layout properties
+      'type': {
+        type: 'dropdown',
+        label: 'Type',
+        options: ['Block', 'Flex'],
+        section: 'layout',
+        priority: 10,
+        getValue: (data) => (data.layout && data.layout.autoLayout && data.layout.autoLayout.mode !== undefined) ? "Flex" : "Block",
+        render: (el, value) => { el.textContent = value; }
+      },
+      'direction': {
+        type: 'dropdown',
+        label: 'Direction',
+        options: ['row', 'column'],
+        section: 'layout',
+        priority: 20,
+        getValue: (data) => (data.layout && data.layout.autoLayout && data.layout.autoLayout.mode === "VERTICAL") ? "column" : "row",
+        render: (el, value) => { el.textContent = value; }
+      },
+      'align': {
+        type: 'dropdown',
+        label: 'Align',
+        options: ['flex-start', 'center', 'flex-end', 'space-between'],
+        section: 'layout',
+        priority: 30,
+        getValue: (data) => {
+          const align = (data.layout && data.layout.autoLayout && data.layout.autoLayout.counterAxis && data.layout.autoLayout.counterAxis.alignItems) || "MIN";
+          return (align === "MIN" ? "flex-start" : 
+                  align === "MAX" ? "flex-end" : 
+                  align === "CENTER" ? "center" : "flex-start");
+        },
+        render: (el, value) => { el.textContent = value; }
+      },
+      'justify': {
+        type: 'dropdown',
+        label: 'Justify',
+        options: ['flex-start', 'center', 'flex-end', 'space-between', 'space-around'],
+        section: 'layout',
+        priority: 40,
+        getValue: (data) => {
+          const justify = (data.layout && data.layout.autoLayout && data.layout.autoLayout.primaryAxis && data.layout.autoLayout.primaryAxis.alignItems) || "MIN";
+          return (justify === "MIN" ? "flex-start" : 
+                 justify === "MAX" ? "flex-end" : 
+                 justify === "CENTER" ? "center" : 
+                 justify === "SPACE_BETWEEN" ? "space-between" : "flex-start");
+        },
+        render: (el, value) => { el.textContent = value; }
+      },
+      'gap': {
+        type: 'number',
+        label: 'Gap',
+        min: 0,
+        max: 1000,
+        section: 'layout',
+        priority: 50,
+        getValue: (data) => (data.layout && data.layout.autoLayout && data.layout.autoLayout.spacing && data.layout.autoLayout.spacing.items) || 0,
+        render: (el, value) => { el.textContent = value; }
+      },
+      'overflow': {
+        type: 'dropdown',
+        label: 'Overflow',
+        options: ['visible', 'hidden'],
+        section: 'layout',
+        priority: 60,
+        getValue: (data) => (data.visual && data.visual.clipsContent) ? "hidden" : "visible",
+        render: (el, value) => { el.textContent = value; }
+      },
+      
+      // Position & Size properties
+      'z-index': {
+        type: 'number',
+        label: 'Z-Index',
+        min: -999,
+        max: 999,
+        section: 'position-size',
+        priority: 10,
+        getValue: (data) => data.zIndex || 0,
+        render: (el, value) => { el.textContent = value; }
+      },
+      'positioning': {
+        type: 'dropdown',
+        label: 'Positioning',
+        options: ['Absolute', 'Relative'],
+        section: 'position-size',
+        priority: 20,
+        getValue: (data) => {
+          const isActuallyInAutoLayout = PropertyInterpreter.isActuallyInAutoLayout(data);
+          const isInAutoLayout = 
+            (data.layout && data.layout.type === 'AUTO') || 
+            (data.layout && data.layout.parent && data.layout.parent.type === 'AUTO') ||
+            (data.layout && data.layout.parent && data.layout.parent.layoutMode === "HORIZONTAL") ||
+            (data.layout && data.layout.parent && data.layout.parent.layoutMode === "VERTICAL") ||
+            isActuallyInAutoLayout;
+          const ignoresAutoLayout = (data.layout && data.layout.isIgnoringAutoLayout === true) && !isActuallyInAutoLayout;
+          return (isInAutoLayout && !ignoresAutoLayout) ? "Relative" : "Absolute";
+        },
+        render: (el, value) => { el.textContent = value; }
+      },
+      'rotation': {
+        type: 'number',
+        label: 'Rotation',
+        min: 0,
+        max: 360,
+        unit: '°',
+        section: 'position-size',
+        priority: 30,
+        getValue: (data) => {
+          const rotation = (data.transform && data.transform.rotation) || 0;
+          return Math.round(rotation * (180/Math.PI));
+        },
+        render: (el, value) => { el.textContent = `${value}°`; }
+      },
+      
+      // Style properties
+      'fill': {
+        type: 'text',
+        label: 'Fill',
+        section: 'style',
+        priority: 10,
+        getValue: (data) => {
+          if (!data.visual || !data.visual.fills || data.visual.fills.length === 0) {
+            return { preview: null, text: 'None', opacity: 100 };
+          }
+          
+          const fill = data.visual.fills[0];
+          if (fill.type !== 'SOLID' || !fill.color) {
+            return { preview: null, text: 'Complex', opacity: 100 };
+          }
+          
+          return {
+            preview: fill.color,
+            text: PropertyInterpreter.rgbToHex(fill.color.r, fill.color.g, fill.color.b),
+            opacity: Math.round((fill.opacity || 1) * 100)
+          };
+        },
+        render: (el, value) => {
+          const colorPreview = el.querySelector('.property-color-preview');
+          const colorValue = el.querySelector('.property-color-value');
+          const opacityValue = el.querySelector('.property-opacity-value');
+          
+          if (value.preview) {
+            const color = value.preview;
+            const opacity = value.opacity / 100;
+            if (colorPreview) {
+              colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
+            }
+          } else if (colorPreview) {
+            colorPreview.style.backgroundColor = 'transparent';
+          }
+          
+          if (colorValue) colorValue.textContent = value.text;
+          if (opacityValue) opacityValue.textContent = `${value.opacity}%`;
+        }
+      },
+      'stroke': {
+        type: 'text',
+        label: 'Stroke',
+        section: 'style',
+        priority: 20,
+        getValue: (data) => {
+          if (!data.visual || !data.visual.strokes || data.visual.strokes.length === 0) {
+            return { preview: null, text: 'None', opacity: 100 };
+          }
+          
+          const stroke = data.visual.strokes[0];
+          if (stroke.type !== 'SOLID' || !stroke.color) {
+            return { preview: null, text: 'Complex', opacity: 100 };
+          }
+          
+          return {
+            preview: stroke.color,
+            text: PropertyInterpreter.rgbToHex(stroke.color.r, stroke.color.g, stroke.color.b),
+            opacity: Math.round((stroke.opacity || 1) * 100),
+            weight: stroke.weight || 1
+          };
+        },
+        render: (el, value) => {
+          const colorPreview = el.querySelector('.property-color-preview');
+          const colorValue = el.querySelector('.property-color-value');
+          
+          if (value.preview) {
+            const color = value.preview;
+            if (colorPreview) {
+              colorPreview.style.backgroundColor = `rgb(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)})`;
+            }
+          } else if (colorPreview) {
+            colorPreview.style.backgroundColor = 'transparent';
+          }
+          
+          if (colorValue) colorValue.textContent = value.text;
+        }
+      },
+      'radius': {
+        type: 'number',
+        label: 'Radius',
+        min: 0,
+        max: 100,
+        section: 'style',
+        priority: 30,
+        getValue: (data) => (data.visual && data.visual.cornerRadius) || 0,
+        render: (el, value) => { el.textContent = value; }
+      },
+      'blend': {
+        type: 'dropdown',
+        label: 'Blend',
+        options: ['Normal', 'Multiply', 'Screen', 'Overlay'],
+        section: 'style',
+        priority: 40,
+        getValue: (data) => PropertyInterpreter.blendMode((data.visual && data.visual.blendMode) || 'NORMAL'),
+        render: (el, value) => { el.textContent = value; }
+      },
+      'shadow': {
+        type: 'text',
+        label: 'Shadow', 
+        section: 'style',
+        priority: 50,
+        getValue: (data) => {
+          if (!data.visual || !data.visual.shadows || data.visual.shadows.length === 0) {
+            return 'None';
+          }
+          return 'Custom';
+        },
+        render: (el, value) => { el.textContent = value; }
+      },
+      
+      // Text properties
+      'font-size': {
+        type: 'number',
+        label: 'Font Size',
+        min: 0,
+        max: 200,
+        section: 'text',
+        priority: 10,
+        getValue: (data) => (data.text && data.text.style && data.text.style.fontSize) || 0,
+        render: (el, value) => { el.textContent = value; }
+      },
+      'color': {
+        type: 'text',
+        label: 'Color',
+        section: 'text',
+        priority: 20,
+        getValue: (data) => {
+          if (!data.text || !data.text.style || !data.text.style.color) {
+            return { preview: null, text: 'None' };
+          }
+          
+          const color = data.text.style.color;
+          return {
+            preview: color,
+            text: PropertyInterpreter.rgbToHex(color.r, color.g, color.b)
+          };
+        },
+        render: (el, value) => {
+          const colorPreview = el.querySelector('.property-color-preview');
+          const colorValue = el.querySelector('.property-color-value');
+          
+          if (value.preview) {
+            const color = value.preview;
+            if (colorPreview) {
+              colorPreview.style.backgroundColor = `rgb(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)})`;
+            }
+          } else if (colorPreview) {
+            colorPreview.style.backgroundColor = 'transparent';
+          }
+          
+          if (colorValue) colorValue.textContent = value.text;
+        }
+      },
+      'alignment': {
+        type: 'dropdown',
+        label: 'Alignment',
+        options: ['Left', 'Center', 'Right', 'Justify'],
+        section: 'text',
+        priority: 30,
+        getValue: (data) => {
+          const alignment = (data.text && data.text.style && data.text.style.alignment && data.text.style.alignment.horizontal) || 'LEFT';
+          return alignment.charAt(0) + alignment.slice(1).toLowerCase();
+        },
+        render: (el, value) => { el.textContent = value; }
+      },
+      'line-height': {
+        type: 'text',
+        label: 'Line Height',
+        section: 'text',
+        priority: 40,
+        getValue: (data) => {
+          const lineHeight = data.text && data.text.style && data.text.style.spacing && data.text.style.spacing.line;
+          return (lineHeight && lineHeight.value !== undefined) ? lineHeight.value : 'Auto';
+        },
+        render: (el, value) => { el.textContent = value; }
+      },
+      'letter-spacing': {
+        type: 'text',
+        label: 'Letter Spacing',
+        section: 'text',
+        priority: 50,
+        getValue: (data) => {
+          const letterSpacing = data.text && data.text.style && data.text.style.spacing && data.text.style.spacing.letter;
+          if (!letterSpacing || letterSpacing.value === undefined) return '0';
+          
+          return letterSpacing.unit === 'PERCENT' 
+            ? `${letterSpacing.value}%`
+            : letterSpacing.value;
+        },
+        render: (el, value) => { el.textContent = value; }
+      }
+    };
+    
     // PropertyBlock and Behavior classes - add before other code
     class PropertyBlock {
       constructor(nameOrElement, options = {}) {
@@ -675,6 +934,11 @@
         block.dataset.property = propertyName;
         block.dataset.state = 'default';
         
+        // Set property type if provided
+        if (options.type) {
+          block.dataset.propertyType = options.type;
+        }
+        
         if (options.label) {
           const label = document.createElement('div');
           label.className = 'property-label';
@@ -684,6 +948,9 @@
         
         const valueContainer = document.createElement('div');
         valueContainer.className = 'property-value';
+        
+        // Remove special styling for blend mode - treat it like other dropdowns
+        
         block.appendChild(valueContainer);
         
         return block;
@@ -726,7 +993,7 @@
       
       getValue() {
         const valueContainer = this.element.querySelector('.property-value');
-        return this.value !== undefined ? this.value : valueContainer?.textContent?.trim();
+        return this.value !== undefined ? this.value : (valueContainer && valueContainer.textContent && valueContainer.textContent.trim());
       }
       
       setState(state) {
@@ -918,228 +1185,162 @@
       }
     }
 
-    // Property interpretation utilities
-    function interpretLayoutType(node) {
+    // Centralized Property Interpreter Utility
+    const PropertyInterpreter = {
+      /**
+       * Determines the layout type based on Figma node properties
+       */
+      layoutType: function(node) {
       if (!node) return "None";
       
-      console.log('Checking layout type for node:', node);
-      
-      // Check for auto layout in the layout object
-      if (node.layout?.mode) {
-        console.log('Found layout mode:', node.layout.mode);
+        if (node.layout && node.layout.autoLayout && node.layout.autoLayout.mode) {
         return "Flex";
       }
       
-      // Then check node type
       if (node.type === "FRAME") {
-        console.log('Found FRAME type');
         return "Block";
       }
+        
       if (node.type === "GROUP") {
-        console.log('Found GROUP type');
         return "Flex";
       }
       
       return "None";
-    }
-
-    function interpretDirection(node) {
-      if (!node) return "row";
+      },
       
-      console.log('Checking direction for node:', node);
+      /**
+       * Interprets Figma's layout mode into CSS flex direction
+       */
+      direction: function(node) {
+        const mode = node.layout && node.layout.autoLayout && node.layout.autoLayout.mode;
+        return mode === "VERTICAL" ? "column" : "row";
+      },
       
-      // Check for layout mode in the layout object
-      if (node.layout?.mode === "VERTICAL") {
-        console.log('Found VERTICAL layout');
-        return "column";
-      }
-      if (node.layout?.mode === "HORIZONTAL") {
-        console.log('Found HORIZONTAL layout');
-        return "row";
-      }
-      
-      return "row";
-    }
-
-    function interpretAlignItems(node) {
-      if (!node) return "flex-start";
-      
-      console.log('Checking alignItems for node:', node);
-      
-      // Check for counterAxisAlignItems in the layout object
-      if (node.layout?.counterAxis?.alignItems) {
-        console.log('Found counterAxisAlignItems:', node.layout.counterAxis.alignItems);
-        switch (node.layout.counterAxis.alignItems) {
-          case "MIN":
-            return "flex-start";
-          case "MAX":
-            return "flex-end";
-          case "CENTER":
-            return "center";
-          case "SPACE_BETWEEN":
-            return "space-between";
+      /**
+       * Interprets Figma's counter axis alignment into CSS align-items
+       */
+      alignItems: function(node) {
+        const align = node.layout && node.layout.autoLayout && node.layout.autoLayout.counterAxis && node.layout.autoLayout.counterAxis.alignItems;
+        
+        switch (align) {
+          case "MIN": return "flex-start";
+          case "MAX": return "flex-end";
+          case "CENTER": return "center";
+          case "SPACE_BETWEEN": return "space-between";
+          default: return "flex-start";
         }
-      }
+      },
       
-      return "flex-start";
-    }
-
-    function interpretJustifyContent(node) {
-      if (!node) return "flex-start";
-      
-      console.log('Checking justifyContent for node:', node);
-      
-      // Check for primaryAxisAlignItems in the layout object
-      if (node.layout?.primaryAxis?.alignItems) {
-        console.log('Found primaryAxisAlignItems:', node.layout.primaryAxis.alignItems);
-        switch (node.layout.primaryAxis.alignItems) {
-          case "MIN":
-            return "flex-start";
-          case "MAX":
-            return "flex-end";
-          case "CENTER":
-            return "center";
-          case "SPACE_BETWEEN":
-            return "space-between";
-          case "SPACE_AROUND":
-            return "space-around";
+      /**
+       * Interprets Figma's primary axis alignment into CSS justify-content
+       */
+      justifyContent: function(node) {
+        const justify = node.layout && node.layout.autoLayout && node.layout.autoLayout.primaryAxis && node.layout.autoLayout.primaryAxis.alignItems;
+        
+        switch (justify) {
+          case "MIN": return "flex-start";
+          case "MAX": return "flex-end";
+          case "CENTER": return "center";
+          case "SPACE_BETWEEN": return "space-between";
+          case "SPACE_AROUND": return "space-around";
+          default: return "flex-start";
         }
-      }
+      },
       
-      return "flex-start";
-    }
-
-    function interpretPadding(node) {
-      if (!node) return { top: 0, right: 0, bottom: 0, left: 0 };
-      
-      console.log('Checking padding for node:', node);
-      
-      // Check for padding in the layout object
-      if (node.layout?.padding) {
-        const padding = {
-          top: node.layout.padding.top || 0,
-          right: node.layout.padding.right || 0,
-          bottom: node.layout.padding.bottom || 0,
-          left: node.layout.padding.left || 0
+      /**
+       * Interprets Figma's padding values into CSS padding
+       */
+      padding: function(node) {
+        const padding = node.layout && node.layout.autoLayout && node.layout.autoLayout.padding;
+        
+        return {
+          top: padding && padding.top || 0,
+          right: padding && padding.right || 0,
+          bottom: padding && padding.bottom || 0,
+          left: padding && padding.left || 0
         };
-        console.log('Found padding in layout object:', padding);
-        return padding;
-      }
+      },
       
-      return { top: 0, right: 0, bottom: 0, left: 0 };
-    }
-
-    function interpretGap(node) {
-      if (!node) return 0;
+      /**
+       * Interprets Figma's spacing values into CSS gap
+       */
+      gap: function(node) {
+        return node.layout && node.layout.autoLayout && node.layout.autoLayout.spacing && node.layout.autoLayout.spacing.items || 0;
+      },
       
-      console.log('Checking gap for node:', node);
+      /**
+       * Interprets Figma's blend mode
+       */
+      blendMode: function(mode) {
+        if (!mode) return 'Normal';
+        
+        const blendModes = {
+          'PASS_THROUGH': 'Pass Through',
+          'NORMAL': 'Normal',
+          'DARKEN': 'Darken',
+          'MULTIPLY': 'Multiply',
+          'LINEAR_BURN': 'Linear Burn',
+          'COLOR_BURN': 'Color Burn',
+          'LIGHTEN': 'Lighten',
+          'SCREEN': 'Screen',
+          'LINEAR_DODGE': 'Linear Dodge',
+          'COLOR_DODGE': 'Color Dodge',
+          'OVERLAY': 'Overlay',
+          'SOFT_LIGHT': 'Soft Light',
+          'HARD_LIGHT': 'Hard Light',
+          'DIFFERENCE': 'Difference',
+          'EXCLUSION': 'Exclusion',
+          'HUE': 'Hue',
+          'SATURATION': 'Saturation',
+          'COLOR': 'Color',
+          'LUMINOSITY': 'Luminosity'
+        };
+        
+        return blendModes[mode] || mode;
+      },
       
-      // Check for itemSpacing in the layout object
-      if (node.layout?.spacing?.items) {
-        console.log('Found itemSpacing in layout object:', node.layout.spacing.items);
-        return node.layout.spacing.items;
-      }
-      
-      return 0;
-    }
-
-    function interpretLayoutProperties(node) {
-      if (!node) return null;
-      
-      console.log('Interpreting layout properties for node:', node);
-      console.log('Node layout object:', node.layout);
-      console.log('Node autoLayout:', node.layout?.autoLayout);
-      console.log('Node parent layout:', node.layout?.parent);
-      console.log('Node parent autoLayout:', node.layout?.parent?.autoLayout);
-      
-      // Check if the node has layout properties
-      const hasLayout = node.layout;
-      console.log('Has layout:', hasLayout);
-      
-      const interpreted = {
-        type: interpretLayoutType(node),
-        direction: interpretDirection(node),
-        alignItems: interpretAlignItems(node),
-        justifyContent: interpretJustifyContent(node),
-        gap: interpretGap(node),
-        padding: interpretPadding(node)
-      };
-      
-      console.log('Interpreted properties:', interpreted);
-      return interpreted;
-    }
-
-    function interpretBlendMode(blendMode) {
-      if (!blendMode) return 'Normal';
-      
-      console.log('Interpreting blend mode:', blendMode);
-      
-      switch (blendMode) {
-        case 'PASS_THROUGH':
-          return 'Pass Through';
-        case 'NORMAL':
-          return 'Normal';
-        case 'DARKEN':
-          return 'Darken';
-        case 'MULTIPLY':
-          return 'Multiply';
-        case 'LINEAR_BURN':
-          return 'Linear Burn';
-        case 'COLOR_BURN':
-          return 'Color Burn';
-        case 'LIGHTEN':
-          return 'Lighten';
-        case 'SCREEN':
-          return 'Screen';
-        case 'LINEAR_DODGE':
-          return 'Linear Dodge';
-        case 'COLOR_DODGE':
-          return 'Color Dodge';
-        case 'OVERLAY':
-          return 'Overlay';
-        case 'SOFT_LIGHT':
-          return 'Soft Light';
-        case 'HARD_LIGHT':
-          return 'Hard Light';
-        case 'DIFFERENCE':
-          return 'Difference';
-        case 'EXCLUSION':
-          return 'Exclusion';
-        case 'HUE':
-          return 'Hue';
-        case 'SATURATION':
-          return 'Saturation';
-        case 'COLOR':
-          return 'Color';
-        case 'LUMINOSITY':
-          return 'Luminosity';
-        default:
-          return blendMode;
-      }
-    }
-
-    // Add this function with the other utility functions
-    function rgbToHex(r, g, b) {
+      /**
+       * Converts RGB to HEX color
+       */
+      rgbToHex: function(r, g, b) {
       const toHex = (n) => {
         const hex = Math.round(n * 255).toString(16);
         return hex.length === 1 ? '0' + hex : hex;
       };
       return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
-    }
+      },
+      
+      /**
+       * Determines if a node actually should be in auto layout despite being marked absolute
+       */
+      isActuallyInAutoLayout: function(data) {
+        if (data.type !== "TEXT") return false;
 
-    const pluginStatus = document.getElementById('plugin-status');
-    const rawDataDisplay = document.getElementById('raw-data');
-    let currentSelection = null;
+        const layoutMode = data.layout && data.layout.parent && data.layout.parent.layoutMode;
+        const positioning = data.layout && data.layout.positioning;
+        const constraints = (data.layout && data.layout.constraints) || {};
+        const hasNeutralConstraints = (
+          constraints.horizontal === "MIN" &&
+          constraints.vertical === "MIN"
+        );
 
-    function formatValue(value) {
-      if (value === null) return 'null';
-      if (value === undefined) return 'undefined';
-      if (typeof value === 'object') {
-        return JSON.stringify(value, null, 2);
+        const isMarkedAbsolute = positioning === "ABSOLUTE";
+        const isInsideAutoLayout = layoutMode === "HORIZONTAL" || layoutMode === "VERTICAL";
+        const isAutoPositioning = positioning === "AUTO";
+
+        if (isMarkedAbsolute && isInsideAutoLayout && hasNeutralConstraints) {
+          return true;
+        }
+
+        if (isAutoPositioning) {
+          return true;
+        }
+
+        return false;
       }
-      return String(value);
-    }
+    };
 
+    // Function to render property group
     function renderPropertyGroup(container, title, properties) {
       const group = document.createElement('div');
       group.className = 'property-group';
@@ -1169,45 +1370,21 @@
       container.appendChild(group);
     }
 
-    function renderLayerTree(items) {
-      const container = document.querySelector('.layer-tree');
-      if (!container) return;
-      
-      container.innerHTML = ''; // Clear existing items
-      
-      items.forEach(item => {
-        const treeItem = document.createElement('div');
-        treeItem.className = 'tree-item';
-        treeItem.dataset.id = item.id;
-        treeItem.textContent = `${item.name} (${item.type})`;
-        treeItem.addEventListener('click', () => selectLayer(item.id));
-        container.appendChild(treeItem);
-      });
-    }
-
-    function selectLayer(id) {
-      // Remove selection from all items
-      document.querySelectorAll('.tree-item').forEach(item => {
-        item.classList.remove('selected');
-      });
-
-      // Add selection to clicked item
-      const selectedItem = document.querySelector(`.tree-item[data-id="${id}"]`);
-      if (selectedItem) {
-        selectedItem.classList.add('selected');
+    // Helper function to format values
+    function formatValue(value) {
+      if (value === null) return 'null';
+      if (value === undefined) return 'undefined';
+      if (typeof value === 'object') {
+        return JSON.stringify(value, null, 2);
       }
-
-      // Request raw node data from the plugin
-      parent.postMessage({
-        pluginMessage: {
-          type: 'get-raw-node-data',
-          id: id
-        }
-      }, '*');
+      return String(value);
     }
     
     function displayRawData(data) {
       if (!data) return;
+      
+      const rawDataDisplay = document.getElementById('raw-data');
+      if (!rawDataDisplay) return;
       
       rawDataDisplay.innerHTML = '';
 
@@ -1261,635 +1438,95 @@
       if (data.vector) {
         renderPropertyGroup(rawDataDisplay, 'Vector Properties', data.vector);
       }
-
-      // Debug all available properties
-      console.log('=== ELEMENT PROPERTIES ANALYSIS ===');
-      console.log('Element type:', data.type);
-      console.log('All available properties:', Object.keys(data));
-      
-      // Text specific properties
-      if (data.type === 'TEXT') {
-        console.log('=== TEXT PROPERTIES ===');
-        console.log('Text object:', data.text);
-        if (data.text) {
-          console.log('Text style:', data.text.style);
-          console.log('Font family:', data.text.fontFamily);
-          console.log('Font size:', data.text.fontSize);
-          console.log('Text color:', data.text.fills);
-          console.log('Text alignment:', data.text.textAlign);
-          console.log('Line height:', data.text.lineHeight);
-          console.log('Letter spacing:', data.text.letterSpacing);
-        }
-      }
-      
-      // Shape specific properties
-      if (data.type === 'RECTANGLE' || data.type === 'ELLIPSE' || data.type === 'POLYGON' || data.type === 'STAR') {
-        console.log('=== SHAPE PROPERTIES ===');
-        console.log('Visual object:', data.visual);
-        if (data.visual) {
-          console.log('Fills:', data.visual.fills);
-          console.log('Strokes:', data.visual.strokes);
-          console.log('Stroke weight:', data.visual.strokeWeight);
-          console.log('Corner radius:', data.visual.cornerRadius);
-        }
-      }
-      
-      // Frame specific properties
-      if (data.type === 'FRAME' || data.type === 'GROUP') {
-        console.log('=== FRAME PROPERTIES ===');
-        console.log('Visual object:', data.visual);
-        if (data.visual) {
-          console.log('Backgrounds:', data.visual.backgrounds);
-          console.log('Effects:', data.visual.effects);
-          console.log('Layout mode:', data.layout?.mode);
-        }
-      }
-      
-      // Component specific properties
-      if (data.type === 'COMPONENT' || data.type === 'INSTANCE') {
-        console.log('=== COMPONENT PROPERTIES ===');
-        console.log('Component object:', data.component);
-        if (data.component) {
-          console.log('Component properties:', data.component.properties);
-          console.log('Variant properties:', data.component.variantProperties);
-        }
-      }
-      
-      // Common properties
-      console.log('=== COMMON PROPERTIES ===');
-      console.log('Visual object:', data.visual);
-      if (data.visual) {
-        console.log('Opacity:', data.visual.opacity);
-        console.log('Blend mode:', data.visual.blendMode);
-        console.log('Effects:', data.visual.effects);
-      }
-      console.log('Constraints:', data.layout?.constraints);
-      console.log('Layout constraints:', data.layout?.layoutConstraints);
-      console.log('========================');
     }
 
-    function updateSectionVisibility(data) {
-      if (!data) return;
+    const pluginStatus = document.getElementById('plugin-status');
+    const rawDataDisplay = document.getElementById('raw-data');
 
-      // Find all sections
-      const sections = document.querySelectorAll('.section');
+    // Centralized state management
+    const AppState = {
+      currentSelection: null,
       
-      // Show/hide sections based on element type
-      sections.forEach(section => {
-        const header = section.querySelector('h3');
-        if (!header) return;
-
-        // Hide Raw Data section
-        if (header.textContent === 'Raw Data') {
-          section.classList.add('hidden');
-        } 
-        // Hide Text section for non-text elements
-        else if (header.textContent === 'Text' && data.type !== 'TEXT') {
-          section.classList.add('hidden');
+      // Status management
+      updateStatus: function(message) {
+        const statusEl = document.getElementById('plugin-status');
+        if (statusEl) statusEl.textContent = message;
+      },
+      
+      // Selection management
+      setSelection: function(data) {
+        this.currentSelection = data;
+        this.updateUI();
+      },
+      
+      // UI update orchestration
+      updateUI: function() {
+        if (!this.currentSelection) return;
+        
+        updateSelectionInfo(this.currentSelection);
+        updateSectionVisibility(this.currentSelection);
+        updateVisibilityByType(this.currentSelection);
+        PropertyHandler.updateAllProperties(this.currentSelection);
+        updatePropertyStates(this.currentSelection);
+        
+        // For debugging
+        displayRawData(this.currentSelection);
+      },
+      
+      // Find a property block by property name
+      findPropertyBlock: function(name) {
+        const element = document.querySelector(`[data-property="${name}"]`);
+        return element ? new PropertyBlock(element) : null;
+      },
+      
+      // Update a property value
+      updatePropertyValue: function(name, value, isOriginal = true) {
+        const block = this.findPropertyBlock(name);
+        if (block) {
+          block.setValue(value, { isOriginal });
+          return true;
         }
-        // Show all other sections
-        else {
-          section.classList.remove('hidden');
-          if (section.style.display) {
-            section.style.removeProperty('display');
-          }
-        }
-      });
-
-      console.log('=== SECTION VISIBILITY UPDATE ===');
-      console.log('Element type:', data.type);
-      sections.forEach(section => {
-        const header = section.querySelector('h3');
-        if (header) {
-          console.log(`${header.textContent}: ${!section.classList.contains('hidden')}`);
-        }
-      });
-    }
-
-    function isActuallyInAutoLayoutDespiteBeingAbsolute(data) {
-      if (data.type !== "TEXT") return false;
-
-      const layoutMode = data.layout?.parent?.layoutMode;
-      const positioning = data.layout?.positioning;
-      const constraints = data.layout?.constraints || {};
-      const hasNeutralConstraints = (
-        constraints.horizontal === "MIN" &&
-        constraints.vertical === "MIN"
-      );
-
-      // Check if node is being flagged as absolute
-      const isMarkedAbsolute = positioning === "ABSOLUTE";
-
-      // Check if parent is auto layout
-      const isInsideAutoLayout = layoutMode === "HORIZONTAL" || layoutMode === "VERTICAL";
-
-      // Fix only if:
-      // 1. It's marked as ABSOLUTE
-      // 2. It's inside an auto layout
-      // 3. It has no meaningful constraints (so likely in flow visually)
-      if (isMarkedAbsolute && isInsideAutoLayout && hasNeutralConstraints) {
-        return true; // treat as relative (override the false positive)
-      }
-
-      // If the text element has AUTO positioning, it's in auto layout
-      if (positioning === "AUTO") {
+        return false;
+      },
+      
+      // Set a property state
+      setPropertyState: function(name, state) {
+        const block = this.findPropertyBlock(name);
+        if (block) {
+          block.setState(state);
         return true;
       }
-
       return false;
     }
-
-    function updateLayoutProperties(data) {
-      if (!data) {
-        console.log('No data provided to updateLayoutProperties');
-        return;
-      }
-      
-      console.log('=== DEBUGGING AUTO LAYOUT DETECTION ===');
-      console.log('Raw node data:', data);
-      console.log('Node layout:', data.layout);
-      console.log('Node autoLayout:', data.layout?.autoLayout);
-      console.log('Node parent layout:', data.layout?.parent);
-      console.log('Node parent layoutMode:', data.layout?.parent?.layoutMode);
-      console.log('Node positioning:', data.layout?.positioning);
-      
-      // Add detailed debugging for text nodes
-      if (data.type === "TEXT") {
-        console.log('>>> OVERRIDE CHECK for TEXT NODE <<<');
-        console.log('Type:', data.type);
-        console.log('Positioning:', data.layout?.positioning);
-        console.log('Parent layoutMode:', data.layout?.parent?.layoutMode);
-        console.log('Constraints:', data.layout?.constraints);
-        console.log('Override applied:', isActuallyInAutoLayoutDespiteBeingAbsolute(data));
-      }
-      
-      // Update UI elements
-      try {
-        const isAutoLayoutContainer = data.layout?.autoLayout?.mode !== undefined;
-        const isActuallyInAutoLayout = isActuallyInAutoLayoutDespiteBeingAbsolute(data);
-        const isInAutoLayout = 
-          data.layout?.type === 'AUTO' || 
-          data.layout?.parent?.type === 'AUTO' ||
-          data.layout?.parent?.layoutMode === "HORIZONTAL" ||
-          data.layout?.parent?.layoutMode === "VERTICAL" ||
-          isActuallyInAutoLayout;
-        const ignoresAutoLayout = data.layout?.isIgnoringAutoLayout === true && !isActuallyInAutoLayout;
-        const positioning = data.layout?.positioning;
-        
-        console.log('=== DETECTION RESULTS ===');
-        console.log('isAutoLayoutContainer:', isAutoLayoutContainer);
-        console.log('isActuallyInAutoLayout:', isActuallyInAutoLayout);
-        console.log('isInAutoLayout:', isInAutoLayout);
-        console.log('ignoresAutoLayout:', ignoresAutoLayout);
-        console.log('positioning:', positioning);
-        console.log('========================');
-
-        // Find property blocks by property name
-        const findPropertyBlock = (name) => {
-          const element = document.querySelector(`[data-property="${name}"]`);
-          if (!element) return null;
-          return new PropertyBlock(element);
-        };
-
-        // Update positioning type
-        const positioningBlock = findPropertyBlock('positioning');
-        if (positioningBlock) {
-          const positioningType = (isInAutoLayout && !ignoresAutoLayout) ? "Relative" : "Absolute";
-          positioningBlock.setValue(positioningType, { isOriginal: true });
-          console.log('Positioning type:', positioningType);
-        }
-
-        // Update overflow
-        const overflowBlock = findPropertyBlock('overflow');
-        if (overflowBlock) {
-          const overflowValue = data.clipsContent ? "hidden" : "visible";
-          overflowBlock.setValue(overflowValue, { isOriginal: true });
-          console.log('Overflow:', overflowValue);
-        }
-
-        // Update z-index
-        const zIndexBlock = findPropertyBlock('z-index');
-        if (zIndexBlock) {
-          // Default to 0 unless specified
-          const zIndexValue = data.zIndex || 0;
-          zIndexBlock.setValue(zIndexValue, { isOriginal: true });
-          console.log('Z-index:', zIndexValue);
-        }
-
-        // Update editability based on positioning
-        const positionBlock = findPropertyBlock('position');
-        const constraintsBlock = findPropertyBlock('constraints');
-        
-        if (isInAutoLayout && !ignoresAutoLayout) {
-          if (positionBlock) positionBlock.setState('locked');
-          if (constraintsBlock) constraintsBlock.setState('locked');
-        } else {
-          if (positionBlock) positionBlock.setState('default');
-          if (constraintsBlock) constraintsBlock.setState('default');
-        }
-
-        // Update layout properties
-        const typeBlock = findPropertyBlock('type');
-        if (typeBlock) {
-          typeBlock.setValue(isAutoLayoutContainer ? "Flex" : "Block", { isOriginal: true });
-          console.log('Layout type:', isAutoLayoutContainer ? "Flex" : "Block");
-        }
-
-        const directionBlock = findPropertyBlock('direction');
-        if (directionBlock) {
-          directionBlock.setValue(data.layout?.autoLayout?.mode === "VERTICAL" ? "column" : "row", { isOriginal: true });
-          console.log('Direction:', data.layout?.autoLayout?.mode === "VERTICAL" ? "column" : "row");
-        }
-
-        const alignBlock = findPropertyBlock('align');
-        if (alignBlock) {
-          const align = data.layout?.autoLayout?.counterAxis?.alignItems || "MIN";
-          const alignValue = 
-            (align === "MIN" ? "flex-start" : 
-             align === "MAX" ? "flex-end" : 
-             align === "CENTER" ? "center" : "flex-start");
-          alignBlock.setValue(alignValue, { isOriginal: true });
-          console.log('Align:', alignValue);
-        }
-
-        const justifyBlock = findPropertyBlock('justify');
-        if (justifyBlock) {
-          const justify = data.layout?.autoLayout?.primaryAxis?.alignItems || "MIN";
-          const justifyValue = 
-            (justify === "MIN" ? "flex-start" : 
-             justify === "MAX" ? "flex-end" : 
-             justify === "CENTER" ? "center" : 
-             justify === "SPACE_BETWEEN" ? "space-between" : "flex-start");
-          justifyBlock.setValue(justifyValue, { isOriginal: true });
-          console.log('Justify:', justifyValue);
-        }
-
-        const gapBlock = findPropertyBlock('gap');
-        if (gapBlock) {
-          gapBlock.setValue(data.layout?.autoLayout?.spacing?.items || 0, { isOriginal: true });
-          console.log('Gap:', data.layout?.autoLayout?.spacing?.items || 0);
-        }
-
-        // Additional property blocks will be updated as they are implemented
-
-      } catch (error) {
-        console.error('Error updating layout properties:', error);
-      }
-    }
-
-    function updateTextProperties(data) {
-      if (!data) return;
-
-      // Get all text property elements
-      const fontSizeEl = document.querySelector('.property-font-size-value');
-      const colorEl = document.querySelector('[data-property="color"] .property-value');
-      const alignmentEl = document.querySelector('[data-property="alignment"] .property-value');
-      const lineHeightEl = document.querySelector('[data-property="line-height"] .property-value');
-      const letterSpacingEl = document.querySelector('[data-property="letter-spacing"] .property-value');
-
-      // Update text properties if it's a text layer
-      if (data.type === 'TEXT') {
-        console.log('=== DEBUGGING TEXT PROPERTIES ===');
-        console.log('Text object:', data.text);
-        console.log('Text style:', data.text?.style);
-        console.log('Line height:', data.text?.style?.spacing?.line);
-        console.log('========================');
-
-        // Update font size
-        if (fontSizeEl) {
-          fontSizeEl.textContent = data.text?.style?.fontSize || 0;
-        }
-
-        // Update text color
-        if (colorEl) {
-          const colorPreview = colorEl.querySelector('.property-color-preview');
-          const colorValue = colorEl.querySelector('.property-color-value');
-          if (data.visual?.fills && data.visual.fills.length > 0) {
-            const fill = data.visual.fills[0];
-            if (fill.type === 'SOLID') {
-              const color = fill.color;
-              const opacity = fill.opacity || 1;
-              colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
-              colorValue.textContent = rgbToHex(color.r, color.g, color.b);
-            } else {
-              colorPreview.style.backgroundColor = 'transparent';
-              colorValue.textContent = 'None';
-            }
-          } else {
-            colorPreview.style.backgroundColor = 'transparent';
-            colorValue.textContent = 'None';
-          }
-        }
-
-        // Update text alignment
-        if (alignmentEl) {
-          const alignment = data.text?.style?.alignment?.horizontal || 'LEFT';
-          alignmentEl.textContent = alignment.charAt(0) + alignment.slice(1).toLowerCase();
-        }
-
-        // Update line height
-        if (lineHeightEl) {
-          const lineHeight = data.text?.style?.spacing?.line;
-          if (lineHeight && lineHeight.value !== undefined) {
-            lineHeightEl.textContent = lineHeight.value;
-          } else {
-            lineHeightEl.textContent = 'Auto';
-          }
-        }
-
-        // Update letter spacing
-        if (letterSpacingEl) {
-          const letterSpacing = data.text?.style?.spacing?.letter;
-          if (letterSpacing && letterSpacing.value !== undefined) {
-            if (letterSpacing.unit === 'PERCENT') {
-              letterSpacingEl.textContent = `${letterSpacing.value}%`;
-            } else {
-              letterSpacingEl.textContent = letterSpacing.value;
-            }
-          } else {
-            letterSpacingEl.textContent = '0';
-          }
-        }
-      } else {
-        // Clear all text properties for non-text layers
-        if (fontSizeEl) fontSizeEl.textContent = '0';
-        if (colorEl) {
-          const colorPreview = colorEl.querySelector('.property-color-preview');
-          const colorValue = colorEl.querySelector('.property-color-value');
-          colorPreview.style.backgroundColor = 'transparent';
-          colorValue.textContent = 'None';
-        }
-        if (alignmentEl) alignmentEl.textContent = 'Left';
-        if (lineHeightEl) lineHeightEl.textContent = 'Auto';
-        if (letterSpacingEl) letterSpacingEl.textContent = '0';
-      }
-    }
-
-    function updateVisualProperties(data) {
-      if (!data) {
-        console.log('No data provided to updateVisualProperties');
-        return;
-      }
-
-      console.log('=== DEBUGGING VISUAL PROPERTIES ===');
-      console.log('Element type:', data.type);
-      console.log('Raw visual data:', data.visual);
-      console.log('Fills:', data.visual?.fills);
-      console.log('Strokes:', data.visual?.strokes);
-      console.log('Corner radius:', data.visual?.cornerRadius);
-      console.log('Opacity:', data.visual?.opacity);
-      console.log('Blend mode:', data.visual?.blendMode);
-      console.log('Effects:', data.visual?.effects);
-      console.log('========================');
-
-      // Update visual properties based on element type
-      const fillEl = document.querySelector('[data-property="fill"] .property-value');
-      const strokeEl = document.querySelector('[data-property="stroke"] .property-value');
-      const radiusEl = document.querySelector('[data-property="radius"] .property-value');
-      const opacityEl = document.querySelector('[data-property="opacity"] .property-value');
-      const blendEl = document.querySelector('[data-property="blend"] .property-value');
-      const shadowEl = document.querySelector('[data-property="shadow"] .property-value');
-
-      // Show/hide properties based on element type
-      const blocks = {
-        fill: document.querySelector('[data-property="fill"]'),
-        stroke: document.querySelector('[data-property="stroke"]'),
-        radius: document.querySelector('[data-property="radius"]'),
-        opacity: document.querySelector('[data-property="opacity"]'),
-        blend: document.querySelector('[data-property="blend"]'),
-        shadow: document.querySelector('[data-property="shadow"]')
-      };
-
-      // Log which properties should be visible
-      console.log('=== PROPERTY VISIBILITY ===');
-      console.log('Element type:', data.type);
-      console.log('Fill visible:', ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'TEXT'].includes(data.type));
-      console.log('Stroke visible:', ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR'].includes(data.type));
-      console.log('Radius visible:', ['FRAME', 'RECTANGLE'].includes(data.type));
-      console.log('========================');
-
-      // Show/hide properties based on element type
-      if (blocks.fill) {
-        blocks.fill.style.display = ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'TEXT'].includes(data.type) ? 'block' : 'none';
-      }
-      if (blocks.stroke) {
-        blocks.stroke.style.display = ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR'].includes(data.type) ? 'block' : 'none';
-      }
-      if (blocks.radius) {
-        blocks.radius.style.display = ['FRAME', 'RECTANGLE'].includes(data.type) ? 'block' : 'none';
-      }
-      if (blocks.opacity) {
-        blocks.opacity.style.display = 'block'; // Always show opacity
-      }
-      if (blocks.blend) {
-        blocks.blend.style.display = 'block'; // Always show blend mode
-      }
-      if (blocks.shadow) {
-        blocks.shadow.style.display = ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'TEXT'].includes(data.type) ? 'block' : 'none';
-      }
-
-      // Update fill and opacity
-      if (fillEl && data.visual?.fills && data.visual.fills.length > 0) {
-        const fill = data.visual.fills[0];
-        console.log('Processing fill:', fill);
-        if (fill.type === 'SOLID') {
-          const color = fill.color;
-          const opacity = fill.opacity || 1;
-          const colorPreview = fillEl.querySelector('.property-color-preview');
-          const colorValue = fillEl.querySelector('.property-color-value');
-          const opacityValue = fillEl.querySelector('.property-opacity-value');
-          if (colorPreview && colorValue && opacityValue) {
-            colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
-            colorValue.textContent = rgbToHex(color.r, color.g, color.b);
-            opacityValue.textContent = `${Math.round(opacity * 100)}%`;
-            console.log('Updated fill color:', colorValue.textContent);
-            console.log('Updated opacity:', opacityValue.textContent);
-      } else {
-            console.log('Color preview, value, or opacity elements not found');
-          }
-        } else {
-          const colorPreview = fillEl?.querySelector('.property-color-preview');
-          const colorValue = fillEl?.querySelector('.property-color-value');
-          const opacityValue = fillEl?.querySelector('.property-opacity-value');
-          if (colorPreview && colorValue && opacityValue) {
-            colorPreview.style.backgroundColor = 'transparent';
-            colorValue.textContent = 'None';
-            opacityValue.textContent = '100%';
-          }
-          console.log('Non-solid fill type:', fill.type);
-        }
-      } else {
-        const colorPreview = fillEl?.querySelector('.property-color-preview');
-        const colorValue = fillEl?.querySelector('.property-color-value');
-        const opacityValue = fillEl?.querySelector('.property-opacity-value');
-        if (colorPreview && colorValue && opacityValue) {
-          colorPreview.style.backgroundColor = 'transparent';
-          colorValue.textContent = 'None';
-          opacityValue.textContent = '100%';
-        }
-        console.log('No fills found or fill element not found');
-      }
-
-      // Update stroke
-      if (strokeEl && data.visual?.strokes && data.visual.strokes.length > 0) {
-        const stroke = data.visual.strokes[0];
-        console.log('Processing stroke:', stroke);
-        const colorPreview = strokeEl.querySelector('.property-color-preview');
-        const colorValue = strokeEl.querySelector('.property-color-value');
-        const strokeWeight = strokeEl.querySelector('.property-stroke-weight');
-        
-        if (stroke.type === 'SOLID' && colorPreview && colorValue && strokeWeight) {
-          const color = stroke.color;
-          const opacity = stroke.opacity || 1;
-          const weight = data.visual.strokeWeight || 0;
-          colorPreview.style.backgroundColor = `rgba(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)}, ${opacity})`;
-          colorValue.textContent = rgbToHex(color.r, color.g, color.b);
-          strokeWeight.textContent = weight;
-          console.log('Updated stroke color:', colorValue.textContent);
-          console.log('Updated stroke weight:', strokeWeight.textContent);
-        } else {
-          if (colorPreview) colorPreview.style.backgroundColor = 'transparent';
-          if (colorValue) colorValue.textContent = 'None';
-          if (strokeWeight) strokeWeight.textContent = '0';
-          console.log('Non-solid stroke type:', stroke.type);
-        }
-      } else {
-        const colorPreview = strokeEl?.querySelector('.property-color-preview');
-        const colorValue = strokeEl?.querySelector('.property-color-value');
-        const strokeWeight = strokeEl?.querySelector('.property-stroke-weight');
-        if (colorPreview) colorPreview.style.backgroundColor = 'transparent';
-        if (colorValue) colorValue.textContent = 'None';
-        if (strokeWeight) strokeWeight.textContent = '0';
-        console.log('No strokes found or stroke element not found');
-      }
-
-      // Update radius
-      if (radiusEl) {
-        const radiusValue = radiusEl.querySelector('.property-radius-value');
-        if (radiusValue) {
-          radiusValue.textContent = data.visual?.cornerRadius || 0;
-          console.log('Updated corner radius:', radiusValue.textContent);
-        }
-      } else {
-        console.log('Radius element not found');
-      }
-
-      // Update opacity
-      if (opacityEl) {
-        const opacity = Math.round((data.visual?.opacity || 1) * 100);
-        opacityEl.textContent = `${opacity}%`;
-        console.log('Updated opacity:', opacityEl.textContent);
-      } else {
-        console.log('Opacity element not found');
-      }
-
-      // Update blend mode
-      if (blendEl) {
-        const blendMode = data.visual?.blendMode || 'NORMAL';
-        blendEl.textContent = interpretBlendMode(blendMode);
-        console.log('Updated blend mode:', blendEl.textContent);
-      } else {
-        console.log('Blend mode element not found');
-      }
-
-      // Update shadow
-      if (shadowEl) {
-        if (data.visual?.effects && data.visual.effects.length > 0) {
-          const shadow = data.visual.effects.find(effect => effect.type === 'DROP_SHADOW');
-          shadowEl.textContent = shadow ? 'Enabled' : 'None';
-          console.log('Updated shadow:', shadowEl.textContent);
-        } else {
-          shadowEl.textContent = 'None';
-          console.log('No shadow effects found');
-        }
-      } else {
-        console.log('Shadow element not found');
-      }
-    }
-
-    // Update the window.onmessage handler
-    window.onmessage = async (event) => {
-      // Validate the message
-      const msg = event.data.pluginMessage;
-      if (!msg || !msg.type) {
-        console.warn('Invalid message received:', event.data);
-        return;
-      }
-      
-      console.log('Message received:', msg.type);
-      
-      // Handle different message types
-      switch (msg.type) {
-        case 'selection-change':
-        case 'selection':
-          handleSelectionChange(msg.data);
-          break;
-          
-        case 'raw-node-data':
-          handleRawNodeData(msg.data);
-          break;
-          
-        case 'plugin-status':
-          updatePluginStatus(msg.message || 'Unknown status');
-          break;
-          
-        case 'init':
-          // Nothing special needed here since we initialize on load
-          console.log('Plugin initialized');
-          break;
-          
-        default:
-          console.warn('Unknown message type:', msg.type);
-      }
     };
     
-    // Helper functions for message handling
+    // Handler for selection change messages
     function handleSelectionChange(data) {
-      if (!data) {
-        console.warn('Selection data is empty');
-        return;
+      if (!data) return;
+      
+      window.Logger.debug('Selection', 'Selection change data', data);
+      window.Logger.debug('Selection', 'Selection data type', typeof data);
+      
+      // If data is an array or has items, use the first item
+      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        window.Logger.debug('Selection', 'Using first item from selection array');
+        data = data.items[0];
       }
       
-      // Update selection name and type display
-      updateSelectionInfo(data);
-      
-      // Store current selection
-      currentSelection = data;
-      
-      // Update property displays
-      updateLayoutProperties(data);
-      updateTextProperties(data);
-      updateVisualProperties(data);
-      
-      // Show raw data for debugging
-      updateRawDataDisplay(data);
+      // Store and update UI
+      AppState.setSelection(data);
     }
     
-    function handleRawNodeData(data) {
-      if (!data) {
-        console.warn('Raw node data is empty');
-        return;
-      }
-      
-      // Update selection title
-      updateSelectionInfo(data);
-      
-      // Update UI based on node data
-      updateSectionVisibility(data);
-      updateLayoutProperties(data);
-      updateTextProperties(data);
-      updateVisualProperties(data);
-    }
-    
+    // Update selection title display
     function updateSelectionInfo(data) {
+      if (!data) return;
+
       const nameEl = document.querySelector('.selection-name');
       const typeEl = document.querySelector('.selection-type');
       
-      if (nameEl && data) {
-        nameEl.textContent = data.name || 'Unnamed';
-      }
+      if (nameEl) nameEl.textContent = data.name || 'Unnamed';
       
-      if (typeEl && data) {
+      if (typeEl) {
         const typeText = data.type 
           ? data.type.charAt(0) + data.type.slice(1).toLowerCase() 
           : 'Unknown';
@@ -1897,39 +1534,80 @@
       }
     }
     
-    function updateRawDataDisplay(data) {
-      const rawDataEl = document.getElementById('raw-data');
-      if (rawDataEl && data) {
-        rawDataEl.textContent = JSON.stringify(data, null, 2);
-      }
+    // Update status display
+    function updateStatus(message) {
+      AppState.updateStatus(message);
     }
-    
-    function updatePluginStatus(message) {
-      const statusEl = document.getElementById('plugin-status');
-      if (statusEl) {
-        statusEl.textContent = message;
+
+    // Update the window.onmessage handler
+    window.onmessage = (event) => {
+      // Validate the message
+      const msg = event.data.pluginMessage;
+      if (!msg || !msg.type) {
+        window.Logger.warn('Messaging', 'Invalid message received', event.data);
+        return;
       }
+      
+      // Handle different message types
+      switch (msg.type) {
+        case 'selection-change':
+        case 'selection':
+          window.Logger.debug('Messaging', 'Selection changed', msg.data && msg.data.id);
+          handleSelectionChange(msg.data);
+          break;
+          
+        case 'raw-node-data':
+          window.Logger.debug('Messaging', 'Raw node data received', msg.data && msg.data.id);
+          handleRawNodeData(msg.data);
+          break;
+          
+        case 'plugin-status':
+          window.Logger.info('Messaging', `Status: ${msg.message || 'Unknown'}`);
+          updateStatus(msg.message || 'Unknown status');
+          break;
+          
+        case 'init':
+          window.Logger.info('Messaging', 'Plugin initialized');
+          break;
+          
+        default:
+          window.Logger.warn('Messaging', 'Unknown message type', msg.type);
+      }
+    };
+
+    // Consolidated section visibility management
+    function updateSectionVisibility(data) {
+      if (!data) return;
+
+      // Map of section headers to visibility conditions
+      const sectionVisibility = {
+        'Layout': true,
+        'Position & Size': true,
+        'Styles': true,
+        'Text': data.type === 'TEXT',
+        'Raw Data': false // Always hidden
+      };
+      
+      // Update visibility for each section
+      document.querySelectorAll('.section').forEach(section => {
+        const header = section.querySelector('h3');
+        if (!header) return;
+        
+        const headerText = header.textContent;
+        const isVisible = sectionVisibility[headerText] !== undefined 
+          ? sectionVisibility[headerText] 
+          : true;
+        
+        section.classList.toggle('hidden', !isVisible);
+      });
     }
 
     // Notify plugin that UI is ready
     parent.postMessage({ pluginMessage: { type: 'ready' } }, '*');
 
-    function moveToDefinedProperties(propertyBlock) {
-      const section = propertyBlock.closest('.section');
-      const mainGrid = section.querySelector('.properties-grid');
-      propertyBlock.classList.remove('undefined');
-      mainGrid.appendChild(propertyBlock);
-    }
-
-    function moveToUndefinedProperties(propertyBlock) {
-      const section = propertyBlock.closest('.section');
-      const undefinedGrid = section.querySelector('.undefined-properties .properties-grid');
-      propertyBlock.classList.add('undefined');
-      undefinedGrid.appendChild(propertyBlock);
-    }
-
+    // Function to initialize property blocks from registry
     function initPropertyBlocks() {
-      console.log('Initializing property blocks with new component system');
+      window.Logger.info('Init', 'Initializing property blocks with registry system');
       
       // Clear existing property containers
       document.querySelectorAll('.properties-grid').forEach(grid => {
@@ -1943,139 +1621,84 @@
       const textProperties = document.getElementById('text-properties');
       
       if (!layoutProperties || !positionSizeProperties || !styleProperties || !textProperties) {
-        console.error('Could not find property containers!');
-        console.log('layout-properties:', layoutProperties);
-        console.log('position-size-properties:', positionSizeProperties);
-        console.log('style-properties:', styleProperties);
-        console.log('text-properties:', textProperties);
+        window.Logger.error('Init', 'Could not find property containers', {
+          layoutProperties,
+          positionSizeProperties,
+          styleProperties,
+          textProperties
+        });
         return;
       }
       
-      console.log('Found property containers, creating blocks...');
+      window.Logger.debug('Init', 'Found property containers, creating blocks from registry');
       
-      // Layout section properties
-      createPropertyBlock('dropdown', 'type', {
-        label: 'Type',
-        options: ['Block', 'Flex']
-      }).appendTo('layout-properties');
+      // Group properties by section
+      const sections = {
+        'layout': [],
+        'position-size': [],
+        'style': [],
+        'text': []
+      };
       
-      createPropertyBlock('dropdown', 'direction', {
-        label: 'Direction',
-        options: ['row', 'column']
-      }).appendTo('layout-properties');
+      // Sort properties into sections
+      Object.entries(window.PropertyRegistry).forEach(([propName, definition]) => {
+        if (definition.section && sections[definition.section]) {
+          sections[definition.section].push({
+            name: propName,
+            ...definition,
+            priority: definition.priority || 100
+          });
+        }
+      });
       
-      createPropertyBlock('dropdown', 'align', {
-        label: 'Align',
-        options: ['flex-start', 'center', 'flex-end', 'space-between']
-      }).appendTo('layout-properties');
+      // Create blocks for each section, sorted by priority
+      Object.entries(sections).forEach(([sectionName, props]) => {
+        // Sort by priority
+        props.sort((a, b) => a.priority - b.priority);
+        
+        // Create blocks
+        props.forEach(prop => {
+          createPropertyBlock(prop.type, prop.name, {
+            label: prop.label,
+            options: prop.options,
+            min: prop.min,
+            max: prop.max,
+            step: prop.step,
+            unit: prop.unit
+          }).appendTo(`${sectionName}-properties`);
+        });
+      });
       
-      createPropertyBlock('dropdown', 'justify', {
-        label: 'Justify',
-        options: ['flex-start', 'center', 'flex-end', 'space-between', 'space-around']
-      }).appendTo('layout-properties');
-      
-      createPropertyBlock('number', 'gap', {
-        label: 'Gap',
-        min: 0,
-        max: 1000
-      }).appendTo('layout-properties');
-      
-      createPropertyBlock('dropdown', 'overflow', {
-        label: 'Overflow',
-        options: ['visible', 'hidden']
-      }).appendTo('layout-properties');
-      
-      // Position & Size properties
-      createPropertyBlock('number', 'z-index', {
-        label: 'Z-Index',
-        min: -999,
-        max: 999
-      }).appendTo('position-size-properties');
-      
-      createPropertyBlock('number', 'rotation', {
-        label: 'Rotation',
-        min: 0,
-        max: 360,
-        unit: '°'
-      }).appendTo('position-size-properties');
-      
-      createPropertyBlock('dropdown', 'positioning', {
-        label: 'Positioning',
-        options: ['Absolute', 'Relative']
-      }).appendTo('position-size-properties');
-      
-      // Style properties
-      createPropertyBlock('text', 'fill', {
-        label: 'Fill'
-      }).appendTo('style-properties');
-      
-      createPropertyBlock('text', 'stroke', {
-        label: 'Stroke'
-      }).appendTo('style-properties');
-      
-      createPropertyBlock('number', 'radius', {
-        label: 'Radius',
-        min: 0,
-        max: 100
-      }).appendTo('style-properties');
-      
-      createPropertyBlock('dropdown', 'blend', {
-        label: 'Blend',
-        options: ['Normal', 'Multiply', 'Screen', 'Overlay']
-      }).appendTo('style-properties');
-      
-      createPropertyBlock('text', 'shadow', {
-        label: 'Shadow'
-      }).appendTo('style-properties');
-      
-      // Text properties
-      createPropertyBlock('number', 'font-size', {
-        label: 'Font Size',
-        min: 0,
-        max: 200
-      }).appendTo('text-properties');
-      
-      createPropertyBlock('text', 'color', {
-        label: 'Color'
-      }).appendTo('text-properties');
-      
-      createPropertyBlock('dropdown', 'alignment', {
-        label: 'Alignment',
-        options: ['Left', 'Center', 'Right', 'Justify']
-      }).appendTo('text-properties');
-      
-      createPropertyBlock('text', 'line-height', {
-        label: 'Line Height'
-      }).appendTo('text-properties');
-      
-      createPropertyBlock('text', 'letter-spacing', {
-        label: 'Letter Spacing'
-      }).appendTo('text-properties');
-      
-      console.log('Property blocks created');
+      window.Logger.info('Init', 'Property blocks created successfully', { 
+        blockCount: Object.values(sections).reduce((total, items) => total + items.length, 0) 
+      });
     }
     
     // End of Property Block Component System
 
     // Configure section behaviors
     function initSections() {
-      console.log('Initializing sections');
+      window.Logger.info('Init', 'Initializing section behaviors');
       
-      // Find all sections
-      document.querySelectorAll('.section-header').forEach(header => {
-        // Remove any existing event listeners by cloning and replacing
-        const newHeader = header.cloneNode(true);
-        header.parentNode.replaceChild(newHeader, header);
-        
-        const section = newHeader.parentElement;
-        const wrapper = section.querySelector('.section-content-wrapper');
-        const arrow = newHeader.querySelector('.section-arrow');
-        
-        // Set initial state - closed
+      // Set initial state for all sections - closed
+      document.querySelectorAll('.section-content-wrapper').forEach(wrapper => {
         wrapper.style.height = '0';
+      });
+      
+      // Use event delegation instead of individual listeners
+      const container = document.querySelector('.plugin-container');
+      if (container) {
+        container.addEventListener('click', (event) => {
+          // Find if a section header or its child was clicked
+          const header = event.target.closest('.section-header');
+          if (!header) return;
+          
+          const section = header.parentElement;
+        const wrapper = section.querySelector('.section-content-wrapper');
+          const arrow = header.querySelector('.section-arrow');
         
-        // Add click handler for the new header
-        newHeader.addEventListener('click', () => {
+          if (!wrapper || !arrow) return;
+        
           if (section.classList.contains('expanded')) {
             // Collapse section
             wrapper.style.height = wrapper.scrollHeight + 'px';
@@ -2094,14 +1717,19 @@
             wrapper.style.height = targetHeight + 'px';
           }
         });
-      });
+      }
       
       // Expand the first section by default
       const firstSection = document.querySelector('.section');
       if (firstSection) {
         const header = firstSection.querySelector('.section-header');
         if (header) {
-          header.click();
+          // Trigger a click event instead of calling click()
+          const clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true
+          });
+          header.dispatchEvent(clickEvent);
         }
       }
     }
@@ -2119,28 +1747,27 @@
       constructor(options = {}) {
         super(options);
         this.dropdownOptions = options.options || [];
-        console.log('DropdownBehavior created with options:', options);
-      }
-      
-      initialize(block) {
-        super.initialize(block);
-        console.log('DropdownBehavior initialized for block:', block.propertyName);
       }
       
       renderValue(value, container) {
-        console.log('DropdownBehavior renderValue:', value);
         // Clear existing content
         container.innerHTML = '';
         
         // Display the value
         container.textContent = value || this.dropdownOptions[0] || 'Select...';
+        
+        // Add dropdown indicator (arrow)
+        const valueContainer = container.closest('.property-value');
+        if (!valueContainer) {
+          window.Logger.error('Dropdown', 'Property value container not found for dropdown');
+          return;
+        }
       }
       
       renderEditableValue() {
-        console.log('DropdownBehavior renderEditableValue');
         const valueContainer = this.block.element.querySelector('.property-value');
         if (!valueContainer) {
-          console.error('Property value container not found');
+          window.Logger.error('Property value container not found for dropdown');
           return;
         }
         
@@ -2160,7 +1787,6 @@
         
         // Set current value
         const currentValue = this.block.getValue();
-        console.log('Current dropdown value:', currentValue);
         if (currentValue) {
           select.value = currentValue;
         }
@@ -2168,9 +1794,11 @@
         // Handle selection
         select.addEventListener('change', () => {
           const newValue = select.value;
-          console.log('Dropdown value changed to:', newValue);
           this.block.setValue(newValue);
           this.block.element.classList.add('manually-edited');
+          
+          // Auto-close dropdown after selection
+          setTimeout(() => this.stopEditing(), 0);
         });
         
         // Add to container and focus
@@ -2230,10 +1858,44 @@
     }
 
     /**
-     * Factory function to create property blocks
+     * Factory function to create property blocks with improved validation and error handling
+     * @param {string} type - Type of property block (number, dropdown, text)
+     * @param {string} propertyName - Name of the property
+     * @param {Object} options - Options for the property block
+     * @returns {PropertyBlock} - The created property block
      */
     function createPropertyBlock(type, propertyName, options = {}) {
-      console.log(`Creating ${type} property block for ${propertyName}`);
+      if (!propertyName) {
+        window.Logger.error('PropertyBlock', 'Property name is required for property block creation');
+        return null;
+      }
+      
+      // Validate options based on type
+      switch (type) {
+        case 'number':
+          options.min = options.min !== undefined ? options.min : -Infinity;
+          options.max = options.max !== undefined ? options.max : Infinity;
+          options.step = options.step || 1;
+          break;
+          
+        case 'dropdown':
+          if (!Array.isArray(options.options) || options.options.length === 0) {
+            window.Logger.warn('PropertyBlock', `Dropdown property ${propertyName} created without valid options`);
+            options.options = ['Default'];
+          }
+          break;
+          
+        case 'text':
+          options.multiline = options.multiline || false;
+          break;
+          
+        default:
+          window.Logger.warn('PropertyBlock', `Unknown property block type: ${type}, defaulting to text`);
+          type = 'text';
+      }
+      
+      // Add type to options
+      options.type = type;
       
       const block = new PropertyBlock(propertyName, options);
       
@@ -2243,58 +1905,463 @@
       // Add type-specific behaviors
       switch (type) {
         case 'number':
-          console.log(`Adding NumberInputBehavior to ${propertyName}`);
           block.addBehavior(new NumberInputBehavior(options));
           break;
         case 'dropdown':
-          console.log(`Adding DropdownBehavior to ${propertyName} with options:`, options.options);
           block.addBehavior(new DropdownBehavior(options));
           break;
         case 'text':
-          console.log(`Adding TextBehavior to ${propertyName}`);
           block.addBehavior(new TextBehavior(options));
           break;
-        default:
-          console.warn(`Unknown property block type: ${type}, using TextBehavior as fallback`);
-          block.addBehavior(new TextBehavior(options));
       }
       
-      console.log(`Property block ${propertyName} created successfully`);
       return block;
     }
+
+    // Add a data-driven property update system
+    const PropertyHandler = {
+      // Update a single property by name
+      updateProperty: function(propertyName, data) {
+        const definition = window.PropertyRegistry[propertyName];
+        if (!definition) {
+          window.Logger.warn('Properties', `No definition found for property: ${propertyName}`);
+          return false;
+        }
+        
+        const valueEl = document.querySelector(`[data-property="${propertyName}"] .property-value`);
+        if (!valueEl) {
+          window.Logger.debug('Properties', `Element not found for property: ${propertyName}`);
+          return false;
+        }
+        
+        try {
+          const value = definition.getValue(data);
+          definition.render(valueEl, value);
+          
+          window.Logger.debug('Properties', `Updated ${propertyName}`, {
+            property: propertyName,
+            value: typeof value === 'object' ? '[complex]' : value
+          });
+          
+          // Also update AppState for backward compatibility
+          if (typeof value === 'object') {
+            // For complex properties like fill, we don't update AppState
+          } else {
+            AppState.updatePropertyValue(propertyName, value);
+          }
+          
+          return true;
+        } catch (error) {
+          window.Logger.error('Properties', `Error updating property ${propertyName}`, error);
+          return false;
+        }
+      },
+      
+      // Update multiple properties at once
+      updateProperties: function(propertyNames, data) {
+        window.Logger.debug('Properties', `Updating multiple properties: ${propertyNames.join(', ')}`);
+        propertyNames.forEach(name => this.updateProperty(name, data));
+      },
+      
+      // Update all properties
+      updateAllProperties: function(data) {
+        window.Logger.info('Properties', 'Updating all properties', { 
+          dataType: data && data.type, 
+          properties: Object.keys(window.PropertyRegistry).length 
+        });
+        
+        window.Logger.debug('Properties', 'PropertyHandler.updateAllProperties - Data', data);
+        window.Logger.debug('Properties', 'PropertyHandler.updateAllProperties - PropertyRegistry', Object.keys(window.PropertyRegistry));
+        
+        // Generate debug information before updating
+        this.debugPropertyValues(data);
+        
+        // Create a collection of all property values for a summary
+        const propertyValues = {};
+        
+        Object.keys(window.PropertyRegistry).forEach(name => {
+          try {
+            const definition = window.PropertyRegistry[name];
+            // Store the interpreted value for summary
+            propertyValues[name] = definition.getValue(data);
+          } catch (error) {
+            propertyValues[name] = `ERROR: ${error.message}`;
+          }
+          
+          // Update the UI with the value
+          this.updateProperty(name, data);
+        });
+        
+        // Log a scannable summary of all properties
+        this.logPropertySummary(propertyValues, data);
+      },
+      
+      // Log a scannable summary table of all properties
+      logPropertySummary: function(propertyValues, data) {
+        // Make sure there's data and debug level
+        if (!data || !window.Logger || !window.Logger.LEVELS || window.Logger.level > window.Logger.LEVELS.DEBUG) return;
+        
+        // Group properties by category
+        const layout = {};
+        const position = {};
+        const style = {};
+        const text = {};
+        
+        // Sort properties into categories
+        Object.entries(propertyValues).forEach(([name, value]) => {
+          const definition = window.PropertyRegistry[name];
+          if (!definition) return;
+          
+          // Skip nullish/empty values
+          if (value === undefined || value === null || value === '') return;
+          
+          // Format value for logging
+          const logValue = typeof value === 'object' ? '[object]' : String(value);
+          
+          switch (definition.section) {
+            case 'layout':
+              layout[name] = logValue;
+              break;
+            case 'position-size':
+              position[name] = logValue;
+              break;
+            case 'style':
+              style[name] = logValue;
+              break;
+            case 'text':
+              text[name] = logValue;
+              break;
+          }
+        });
+        
+        // Log properties by section
+        window.Logger.debug('Properties', `Node ${data.name} (${data.type}) summary:`);
+        
+        if (Object.keys(layout).length > 0) {
+          window.Logger.debug('Properties', 'Layout', layout);
+        }
+        
+        if (Object.keys(position).length > 0) {
+          window.Logger.debug('Properties', 'Position & Size', position);
+        }
+        
+        if (Object.keys(style).length > 0) {
+          window.Logger.debug('Properties', 'Style', style);
+        }
+        
+        if (Object.keys(text).length > 0) {
+          window.Logger.debug('Properties', 'Text', text);
+        }
+      },
+      
+      // Debug property values - generate a detailed comparison of raw vs interpreted values
+      debugPropertyValues: function(data) {
+        if (!data) return;
+        
+        // Only log in DEBUG level
+        if (!window.Logger || !window.Logger.LEVELS || window.Logger.level > window.Logger.LEVELS.DEBUG) return;
+        
+        console.group(`=== Property Values for Node: ${data.name} (${data.id}) ===`);
+        
+        // For each property in the registry
+        Object.entries(window.PropertyRegistry).forEach(([propName, definition]) => {
+          try {
+            // Get the raw property path from the definition
+            let rawValue = '[No path info]';
+            let rawValueString = '';
+            
+            // Get raw value based on property name and typical paths
+            if (propName === 'type' || propName === 'direction') {
+              rawValue = data.layout && data.layout.autoLayout && data.layout.autoLayout.mode;
+              rawValueString = `data.layout.autoLayout.mode = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'align') {
+              rawValue = data.layout && data.layout.autoLayout && data.layout.autoLayout.counterAxis && data.layout.autoLayout.counterAxis.alignItems;
+              rawValueString = `data.layout.autoLayout.counterAxis.alignItems = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'justify') {
+              rawValue = data.layout && data.layout.autoLayout && data.layout.autoLayout.primaryAxis && data.layout.autoLayout.primaryAxis.alignItems;
+              rawValueString = `data.layout.autoLayout.primaryAxis.alignItems = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'gap') {
+              rawValue = data.layout && data.layout.autoLayout && data.layout.autoLayout.spacing && data.layout.autoLayout.spacing.items;
+              rawValueString = `data.layout.autoLayout.spacing.items = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'overflow') {
+              rawValue = data.clipsContent;
+              rawValueString = `data.clipsContent = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'z-index') {
+              rawValue = data.zIndex;
+              rawValueString = `data.zIndex = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'positioning') {
+              rawValue = {
+                layout: data.layout && data.layout.type,
+                parent: data.layout && data.layout.parent && data.layout.parent.type,
+                parentLayoutMode: data.layout && data.layout.parent && data.layout.parent.layoutMode,
+                positioning: data.layout && data.layout.positioning,
+                ignoresAutoLayout: data.layout && data.layout.isIgnoringAutoLayout
+              };
+              rawValueString = `data.layout.[multiple] = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'rotation') {
+              rawValue = data.rotation;
+              rawValueString = `data.rotation = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'fill') {
+              rawValue = data.visual && data.visual.fills;
+              rawValueString = `data.visual.fills = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'stroke') {
+              rawValue = data.visual && data.visual.strokes;
+              rawValueString = `data.visual.strokes = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'radius') {
+              rawValue = data.visual && data.visual.cornerRadius;
+              rawValueString = `data.visual.cornerRadius = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'blend') {
+              rawValue = data.visual && data.visual.blendMode;
+              rawValueString = `data.visual.blendMode = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'shadow') {
+              rawValue = data.visual && data.visual.shadows;
+              rawValueString = `data.visual.shadows = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'font-size') {
+              rawValue = data.text && data.text.style && data.text.style.fontSize;
+              rawValueString = `data.text.style.fontSize = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'color') {
+              rawValue = data.text && data.text.style && data.text.style.color;
+              rawValueString = `data.text.style.color = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'alignment') {
+              rawValue = data.text && data.text.style && data.text.style.alignment && data.text.style.alignment.horizontal;
+              rawValueString = `data.text.style.alignment.horizontal = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'line-height') {
+              rawValue = data.text && data.text.style && data.text.style.spacing && data.text.style.spacing.line;
+              rawValueString = `data.text.style.spacing.line = ${JSON.stringify(rawValue)}`;
+            } else if (propName === 'letter-spacing') {
+              rawValue = data.text && data.text.style && data.text.style.spacing && data.text.style.spacing.letter;
+              rawValueString = `data.text.style.spacing.letter = ${JSON.stringify(rawValue)}`;
+            }
+            
+            // Get the interpreted value
+            let interpretedValue;
+            try {
+              interpretedValue = definition.getValue ? definition.getValue(data) : '[No getValue function]';
+            } catch (error) {
+              interpretedValue = `ERROR: ${error.message}`;
+              window.Logger.error('Properties', `Error getting interpreted value for ${propName}`, error);
+            }
+            
+            console.log(`Property: ${propName}`);
+            console.log(`  Raw: ${rawValueString}`);
+            console.log(`  Interpreted: ${JSON.stringify(interpretedValue)}`);
+            
+          } catch (error) {
+            window.Logger.error('Properties', `Error in debugPropertyValues for ${propName}`, error);
+          }
+        });
+        
+        console.groupEnd();
+      },
+      
+      // Update properties by category
+      updateCategory: function(category, data) {
+        // Find all properties in the given category
+        const propertiesToUpdate = Object.entries(PropertyRegistry)
+          .filter(([_, def]) => def.section === category)
+          .map(([name, _]) => name);
+          
+        window.Logger.debug('Properties', `Updating ${category} properties`, { count: propertiesToUpdate.length });
+        this.updateProperties(propertiesToUpdate, data);
+      }
+    };
+    
+    // Update handlers for node data
+    function handleRawNodeData(data) {
+      if (!data) {
+        window.Logger.warn('NodeData', 'Received null or undefined node data');
+        return;
+      }
+      
+      // IMPORTANT: Log the full data structure to debug issues
+      window.Logger.debug('NodeData', 'Full data structure received', data);
+      window.Logger.debug('NodeData', 'Data type', typeof data);
+      window.Logger.debug('NodeData', 'Data properties', Object.keys(data));
+      
+      // Log detailed raw data for debugging
+      if (window.Logger.level <= window.Logger.LEVELS.DEBUG) {
+        window.Logger.debug('NodeData', `Raw Node Data: ${data.name} (${data.id})`);
+        window.Logger.debug('NodeData', 'Basic Info', { id: data.id, name: data.name, type: data.type });
+        
+        if (data.layout) window.Logger.debug('NodeData', 'Layout', data.layout);
+        if (data.visual) window.Logger.debug('NodeData', 'Visual', data.visual);
+        if (data.text) window.Logger.debug('NodeData', 'Text', data.text);
+        if (data.position) window.Logger.debug('NodeData', 'Position', data.position);
+        if (data.size) window.Logger.debug('NodeData', 'Size', data.size);
+      }
+      
+      window.Logger.info('NodeData', 'Processing node data', { 
+        id: data.id, 
+        type: data.type,
+        name: data.name 
+      });
+      
+      // Update UI with raw node data
+      updateSelectionInfo(data);
+      updateSectionVisibility(data);
+      updateVisibilityByType(data);
+      
+      // Use the data-driven PropertyHandler to update all properties consistently
+      PropertyHandler.updateAllProperties(data);
+      
+      // Set property states based on auto layout
+      updatePropertyStates(data);
+    }
+    
+    // Update property states (locked/unlocked) based on context
+    function updatePropertyStates(data) {
+      if (!data) return;
+      
+      try {
+        const isActuallyInAutoLayout = PropertyInterpreter.isActuallyInAutoLayout(data);
+        const isInAutoLayout = 
+          (data.layout && data.layout.type === 'AUTO') || 
+          (data.layout && data.layout.parent && data.layout.parent.type === 'AUTO') ||
+          (data.layout && data.layout.parent && data.layout.parent.layoutMode === "HORIZONTAL") ||
+          (data.layout && data.layout.parent && data.layout.parent.layoutMode === "VERTICAL") ||
+          isActuallyInAutoLayout;
+        const ignoresAutoLayout = (data.layout && data.layout.isIgnoringAutoLayout === true) && !isActuallyInAutoLayout;
+        
+        window.Logger.debug('Properties', 'Updating property states', {
+          isInAutoLayout,
+          ignoresAutoLayout
+        });
+        
+        // Lock/unlock position and constraints based on auto layout
+        if (isInAutoLayout && !ignoresAutoLayout) {
+          AppState.setPropertyState('position', 'locked');
+          AppState.setPropertyState('constraints', 'locked');
+        } else {
+          AppState.setPropertyState('position', 'default');
+          AppState.setPropertyState('constraints', 'default');
+        }
+      } catch (error) {
+        window.Logger.error('Properties', 'Error updating property states', error);
+      }
+    }
+
+    // The PropertyHandler system replaces these individual update functions
+    // Layout, Text and Visual properties are now handled by PropertyHandler.updateProperty
+    function updateVisibilityByType(data) {
+      if (!data) {
+        window.Logger.warn('UI', 'Cannot update visibility: no data provided');
+        return;
+      }
+
+      // Show/hide property blocks based on element type
+      const visibilityMap = {
+        'fill': ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'TEXT'],
+        'stroke': ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR'],
+        'radius': ['FRAME', 'RECTANGLE'],
+        'opacity': true, // Always show
+        'blend': true,   // Always show
+        'shadow': ['FRAME', 'RECTANGLE', 'ELLIPSE', 'POLYGON', 'STAR', 'TEXT']
+      };
+      
+      window.Logger.debug('UI', 'Updating property visibility', { elementType: data.type });
+      
+      // Update visibility for property blocks
+      Object.entries(visibilityMap).forEach(([property, types]) => {
+        const block = document.querySelector(`[data-property="${property}"]`);
+        if (!block) return;
+        
+        const isVisible = types === true || 
+          (Array.isArray(types) && types.includes(data.type));
+        
+        block.style.display = isVisible ? 'block' : 'none';
+      });
+    }
+
+    function findPropertyBlock(propertyName) {
+      return document.querySelector(`[data-property="${propertyName}"]`);
+    }
+
+    function updatePropertyValue(propertyName, value) {
+      const block = findPropertyBlock(propertyName);
+      if (!block) return false;
+      
+      const valueContainer = block.querySelector('.property-value');
+      if (!valueContainer) return false;
+      
+      window.Logger.debug('UI', `Updated property value: ${propertyName} = ${value}`);
+      valueContainer.textContent = value;
+      
+      return true;
+    }
+
+    function setPropertyState(propertyName, state) {
+      const block = findPropertyBlock(propertyName);
+      if (!block) return false;
+      
+      // Remove existing state classes
+      block.classList.remove('editing', 'modified', 'locked');
+      
+      // Add new state if specified
+      if (state) {
+        block.classList.add(state);
+      }
+      
+      return true;
+    }
+
+    // Add utility functions for showing/hiding elements with animation
   </script>
   
   <!-- Initialization script -->
   <script>
     // Single initialization function that handles everything
     function initializeUI() {
-      console.log('Initializing UI');
+      // First check if Logger exists before using it
+      if (!window.Logger) {
+        console.error('Logger is not defined, cannot initialize properly');
+        return;
+      }
+      
+      window.Logger.info('Init', 'Starting UI initialization');
+      
+      // Check if PropertyRegistry exists before initializing property blocks
+      if (typeof window.PropertyRegistry === 'undefined' || Object.keys(window.PropertyRegistry).length === 0) {
+        window.Logger.error('Init', 'PropertyRegistry is not properly defined, cannot initialize property blocks');
+        return;
+      }
       
       // 1. Initialize property blocks
+      safeExecute(
+        () => { 
       if (typeof initPropertyBlocks === 'function') {
         initPropertyBlocks();
-      } else {
-        console.error('initPropertyBlocks function not defined');
+            return true;
       }
+          window.Logger.error('Init', 'initPropertyBlocks function not defined');
+          return false;
+        },
+        'Failed to initialize property blocks'
+      );
       
       // 2. Initialize section behaviors
+      safeExecute(
+        () => {
       if (typeof initSections === 'function') {
         initSections();
-      } else {
-        console.error('initSections function not defined');
+            return true;
       }
+          window.Logger.error('Init', 'initSections function not defined');
+          return false;
+        },
+        'Failed to initialize sections'
+      );
       
       // 3. Notify plugin that UI is ready
       parent.postMessage({ pluginMessage: { type: 'ui-ready' } }, '*');
-      console.log('UI initialization complete');
+      window.Logger.info('Init', 'UI initialization complete');
     }
     
     // Initialize on DOMContentLoaded (safer approach)
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initializeUI);
     } else {
-      // DOM already loaded, run immediately
-      initializeUI();
+      // Add a small delay to ensure all scripts are loaded and processed
+      setTimeout(initializeUI, 0);
     }
   </script>
 </body>

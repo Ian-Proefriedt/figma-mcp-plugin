@@ -5,7 +5,24 @@
  * of Figma nodes. It serves as the source of truth for layout detection.
  */
 
-console.log("Running NEW figma-mcp-plugin version");
+// Debug flag for controlling logging output
+const DEBUG = false;
+
+// Only log in debug mode
+function debugLog(...args) {
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
+
+// Only warn in debug mode
+function debugWarn(...args) {
+  if (DEBUG) {
+    console.warn(...args);
+  }
+}
+
+debugLog("Running figma-mcp-plugin");
 
 /**
  * Determines if a node is ignoring its parent's auto layout
@@ -48,6 +65,8 @@ function getLayoutType(node) {
 
 /**
  * Extracts all relevant layout properties from a node
+ * @deprecated Use processNodeProperties instead for a more structured output format. 
+ * This function is maintained for backwards compatibility.
  * @param {SceneNode} node - The node to extract properties from
  * @returns {Object} - The extracted properties
  */
@@ -60,9 +79,9 @@ function extractLayoutProperties(node) {
     name: node.name,
     type: node.type,
     visible: node.visible,
-      x: node.x,
-      y: node.y,
-      width: node.width,
+    x: node.x,
+    y: node.y,
+    width: node.width,
     height: node.height,
     opacity: node.opacity,
     blendMode: node.blendMode,
@@ -221,13 +240,13 @@ function extractLayoutProperties(node) {
 function logLayoutProperties(node) {
   if (!node) return;
 
-  console.log("=== Layout Properties ===");
-  console.log(`Node: ${node.name} (${node.type})`);
-  console.log(`Layout Type: ${getLayoutType(node)}`);
-  console.log(`Is Ignoring Auto Layout: ${isIgnoringAutoLayout(node)}`);
+  debugLog("=== Layout Properties ===");
+  debugLog(`Node: ${node.name} (${node.type})`);
+  debugLog(`Layout Type: ${getLayoutType(node)}`);
+  debugLog(`Is Ignoring Auto Layout: ${isIgnoringAutoLayout(node)}`);
   
   if (node.parent) {
-    console.log("Parent Info:", {
+    debugLog("Parent Info:", {
       name: node.parent.name,
       type: node.parent.type,
       layoutMode: node.parent.layoutMode,
@@ -237,15 +256,15 @@ function logLayoutProperties(node) {
   }
   
   if (node.layoutPositioning) {
-    console.log(`Layout Positioning: ${node.layoutPositioning}`);
+    debugLog(`Layout Positioning: ${node.layoutPositioning}`);
   }
   
   if (node.constraints) {
-    console.log("Constraints:", node.constraints);
+    debugLog("Constraints:", node.constraints);
   }
   
   if (node.layoutMode) {
-    console.log("Auto Layout Properties:", {
+    debugLog("Auto Layout Properties:", {
       layoutMode: node.layoutMode,
       primaryAxisAlignItems: node.primaryAxisAlignItems,
       counterAxisAlignItems: node.counterAxisAlignItems,
@@ -264,7 +283,7 @@ function logLayoutProperties(node) {
 
   // Log additional properties based on node type
   if (node.type === "TEXT") {
-    console.log("Text Properties:", {
+    debugLog("Text Properties:", {
       fontSize: node.fontSize,
       textAlignHorizontal: node.textAlignHorizontal,
       textAlignVertical: node.textAlignVertical,
@@ -274,7 +293,7 @@ function logLayoutProperties(node) {
   }
 
   if (node.type === "SECTION") {
-    console.log("Section Properties:", {
+    debugLog("Section Properties:", {
       isExpanded: node.isExpanded,
       isLocked: node.isLocked,
       isSticky: node.isSticky
@@ -282,7 +301,7 @@ function logLayoutProperties(node) {
   }
 
   if (node.type === "GROUP") {
-    console.log("Group Properties:", {
+    debugLog("Group Properties:", {
       isLocked: node.isLocked,
       isMask: node.isMask,
       clipsContent: node.clipsContent
@@ -290,17 +309,14 @@ function logLayoutProperties(node) {
   }
 
   if (node.type === "VECTOR" || node.type === "STAR" || node.type === "LINE" || node.type === "ELLIPSE" || node.type === "POLYGON" || node.type === "RECTANGLE") {
-    console.log("Vector Properties:", {
+    debugLog("Vector Properties:", {
       vectorPaths: node.vectorPaths,
-      vectorNetwork: node.vectorNetwork,
-      handleMirroring: node.handleMirroring,
-      pointCount: node.pointCount,
-      pointRadius: node.pointRadius
+      vectorNetwork: node.vectorNetwork
     });
   }
 
   if (node.layoutGrids) {
-    console.log("Layout Grids:", node.layoutGrids);
+    debugLog("Layout Grids:", node.layoutGrids);
   }
 }
 
@@ -632,15 +648,17 @@ figma.showUI(__html__, {
 // Run tests when plugin starts
 testLayoutDetection();
 
+/**
+ * Sends selection information to the UI
+ */
 function sendSelectionInfo() {
+  // Get current selection
   const selection = figma.currentPage.selection;
-  const currentPage = figma.currentPage;
   
   // Get page context
   const pageContext = {
-    name: currentPage.name,
-    totalLayers: currentPage.children.length,
-    zoom: figma.viewport.zoom * 100
+    id: figma.currentPage.id,
+    name: figma.currentPage.name
   };
   
   if (selection.length === 0) {
@@ -658,17 +676,19 @@ function sendSelectionInfo() {
   // Process selected layers
   const layerItems = selection.map(node => {
     // Log raw properties for debugging
-    console.log("=== Raw Properties for Node:", node.name, "===");
-    Object.entries(node).forEach(([key, value]) => {
-      console.log(`${key}:`, value);
-    });
+    debugLog("=== Raw Properties for Node:", node.name, "===");
+    if (DEBUG) {
+      Object.entries(node).forEach(([key, value]) => {
+        debugLog(`${key}:`, value);
+      });
+    }
 
     // Process the node properties
     const processedProperties = processNodeProperties(node);
     
     // Log processed properties for debugging
-    console.log("=== Processed Properties for Node:", node.name, "===");
-    console.log(processedProperties);
+    debugLog("=== Processed Properties for Node:", node.name, "===");
+    debugLog(processedProperties);
 
     return processedProperties;
   });
@@ -685,9 +705,9 @@ function sendSelectionInfo() {
 
 // Basic message handling
 figma.ui.onmessage = async (msg) => {
-  console.log('Plugin received message:', msg);
+  debugLog('Plugin received message:', msg);
   
-  if (msg.type === 'ready') {
+  if (msg.type === 'ready' || msg.type === 'ui-ready') {
     // Send plugin status
     figma.ui.postMessage({
       type: 'plugin-status',
@@ -700,15 +720,22 @@ figma.ui.onmessage = async (msg) => {
     // Get the raw node data directly from Figma's API
     const node = figma.getNodeById(msg.id);
     if (node) {
-      // Extract and log the layout properties
-      const layoutData = extractLayoutProperties(node);
+      // Process the node data in a consistent format
+      const processedData = processNodeProperties(node);
       logLayoutProperties(node);
       
-      // Send the complete raw node data back to the UI
+      // Send the processed node data back to the UI
       figma.ui.postMessage({
         type: 'raw-node-data',
         id: msg.id,
-        data: layoutData
+        data: processedData
+      });
+      
+      // Log the exact data we're sending to the UI
+      debugWarn("Sending data to UI:", {
+        type: 'raw-node-data',
+        id: msg.id,
+        data: processedData
       });
     }
   }
