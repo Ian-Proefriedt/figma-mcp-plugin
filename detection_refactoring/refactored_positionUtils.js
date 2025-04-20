@@ -37,6 +37,27 @@ function mapConstraint(value) {
   }
 }
 
+function isActuallyInAutoLayout(node) {
+  if (!node || node.type !== "TEXT") return false;
+
+  const parentLayout = node?.parent?.layoutMode;
+  const positioning = node?.layoutPositioning;
+  const constraints = node?.constraints ?? {};
+  const hasNeutralConstraints = (
+    constraints.horizontal === "MIN" &&
+    constraints.vertical === "MIN"
+  );
+
+  const isMarkedAbsolute = positioning === "ABSOLUTE";
+  const isInsideAutoLayout = parentLayout === "HORIZONTAL" || parentLayout === "VERTICAL";
+  const isAutoPositioning = positioning === "AUTO";
+
+  return (
+    (isMarkedAbsolute && isInsideAutoLayout && hasNeutralConstraints) ||
+    isAutoPositioning
+  );
+}
+
 function getFixedStatus(node) {
   const isAbsolute = node?.layoutPositioning === 'ABSOLUTE';
   const isTopLevel = node?.parent?.type === 'FRAME' && !node?.parent?.parent;
@@ -44,6 +65,7 @@ function getFixedStatus(node) {
 }
 
 export function getPositioning(node) {
+  if (isActuallyInAutoLayout(node)) return 'relative';
   if (getFixedStatus(node)) return 'fixed';
   return node?.layoutPositioning === 'ABSOLUTE' ? 'absolute' : 'relative';
 }

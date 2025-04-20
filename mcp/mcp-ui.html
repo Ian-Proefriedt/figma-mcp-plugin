@@ -689,14 +689,13 @@
         section: 'position-size',
         priority: 20,
         getValue: (data) => {
-          const isActuallyInAutoLayout = PropertyInterpreter.isActuallyInAutoLayout(data);
+          // const isActuallyInAutoLayout = PropertyInterpreter.isActuallyInAutoLayout(data);
           const isInAutoLayout = 
             (data.layout && data.layout.type === 'AUTO') || 
             (data.layout && data.layout.parent && data.layout.parent.type === 'AUTO') ||
             (data.layout && data.layout.parent && data.layout.parent.layoutMode === "HORIZONTAL") ||
-            (data.layout && data.layout.parent && data.layout.parent.layoutMode === "VERTICAL") ||
-            isActuallyInAutoLayout;
-          const ignoresAutoLayout = (data.layout && data.layout.isIgnoringAutoLayout === true) && !isActuallyInAutoLayout;
+            (data.layout && data.layout.parent && data.layout.parent.layoutMode === "VERTICAL");
+          const ignoresAutoLayout = (data.layout && data.layout.isIgnoringAutoLayout === true);
           return (isInAutoLayout && !ignoresAutoLayout) ? "Relative" : "Absolute";
         },
         render: (el, value) => { el.textContent = value; }
