@@ -1,9 +1,13 @@
 {
-  "name": "figma-mcp-plugin",
+  "name": "MCP Test Plugin",
   "id": "figma-mcp-plugin",
   "api": "1.0.0",
-  "main": "mcp/plugin.js",
-  "ui": "mcp/mcp-ui.html",
+  "main": "mcp/test-plugin.js",
+  "ui": "mcp/test-ui.html",
   "editorType": ["figma", "dev"],
-  "capabilities": ["inspect"]
+  "capabilities": ["inspect"],
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  },
+  "permissions": []
 } 

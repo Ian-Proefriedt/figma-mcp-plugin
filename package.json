@@ -2,7 +2,7 @@
   "name": "figma-mcp-plugin",
   "version": "1.0.0",
   "description": "Figma plugin for Material Component Properties",
-  "main": "mcp/plugin.js",
+  "main": "mcp/test-plugin.js",
   "directories": {
     "doc": "docs"
   },
@@ -10,7 +10,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node mcp/start-mcp.cjs",
     "build": "webpack --mode=production",
-    "dev": "cross-env WEBPACK_WATCH=true webpack --mode=development --watch"
+    "dev": "cross-env WEBPACK_WATCH=true webpack --mode=development --watch",
+    "mcp": "node mcp/start-mcp.cjs"
   },
   "keywords": [],
   "author": "Ian Proefriedt",
