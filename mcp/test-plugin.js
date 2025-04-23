@@ -1,32 +1,8 @@
-// test-plugin.js (Flattened detection test plugin with recursive + z-index integration)
-
 // ================================
-// ✳️ STYLE NAME HELPERS
+// ✳️ DETECTION
 // ================================
 
-function getStyleNameById(styleId, styleType) {
-  let styles = [];
-  switch (styleType) {
-    case 'text':
-      styles = figma.getLocalTextStyles();
-      break;
-    case 'fill':
-    case 'stroke':
-      styles = figma.getLocalPaintStyles();
-      break;
-    case 'effect':
-      styles = figma.getLocalEffectStyles();
-      break;
-  }
-  const style = styles.find(s => s.id === styleId);
-  return style ? style.name : null;
-}
 
-// ================================
-// ✳️ DETECTION FUNCTIONS
-// ================================
-
-// [Insert full detection functions here — imported from original plugin version]
 // --- Layout Detection
 function getLayoutDirection(node) {
   return node && node.layoutMode === 'VERTICAL' ? 'column' : 'row';
@@ -34,17 +10,6 @@ function getLayoutDirection(node) {
 
 function isAutoLayout(node) {
   return (node && (node.layoutMode === 'VERTICAL' || node.layoutMode === 'HORIZONTAL'));
-}
-
-function interpretAlignment(value) {
-  switch (value) {
-    case 'MIN': return 'flex-start';
-    case 'MAX': return 'flex-end';
-    case 'CENTER': return 'center';
-    case 'SPACE_BETWEEN': return 'space-between';
-    case 'SPACE_AROUND': return 'space-around';
-    default: return (value && value.toLowerCase().replaceAll('_', '-')) || 'undefined';
-  }
 }
 
 function getLayoutAlignment(node) {
@@ -72,35 +37,13 @@ function getLayoutWrap(node) {
   return val === 'WRAP' ? 'wrap' : 'nowrap';
 }
 
+
 // --- Position Detection
 function isOverlapping(a, b) {
   if (!a || !b) return false;
   const ax = a.x, ay = a.y, aw = a.width, ah = a.height;
   const bx = b.x, by = b.y, bw = b.width, bh = b.height;
   return !(ax + aw <= bx || ax >= bx + bw || ay + ah <= by || ay >= by + bh);
-}
-
-function interpretConstraint(value, axis) {
-  if (axis === 'horizontal') {
-    switch (value) {
-      case 'MIN': return 'left';
-      case 'MAX': return 'right';
-      case 'CENTER': return 'center';
-      case 'STRETCH': return 'stretch';
-      case 'SCALE': return 'scale';
-      default: return (value && value.toLowerCase()) || 'undefined';
-    }
-  } else if (axis === 'vertical') {
-    switch (value) {
-      case 'MIN': return 'top';
-      case 'MAX': return 'bottom';
-      case 'CENTER': return 'center';
-      case 'STRETCH': return 'stretch';
-      case 'SCALE': return 'scale';
-      default: return (value && value.toLowerCase()) || 'undefined';
-    }
-  }
-  return 'undefined';
 }
 
 function isActuallyInAutoLayout(node) {
@@ -163,24 +106,8 @@ function getZIndex(node) {
   return 1; // placeholder: replaced by traverseNodeTree z-index logic
 }
 
+
 // --- Style Detection
-function rgbToHex(color) {
-  const r = Math.round(color.r * 255);
-  const g = Math.round(color.g * 255);
-  const b = Math.round(color.b * 255);
-  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-}
-
-function interpretFillType(type) {
-  switch (type) {
-    case 'SOLID': return 'solid';
-    case 'LINEAR_GRADIENT': return 'linear-gradient';
-    case 'RADIAL_GRADIENT': return 'radial-gradient';
-    case 'ANGULAR_GRADIENT': return 'conic-gradient';
-    default: return (type && type.toLowerCase()) || 'unknown';
-  }
-}
-
 function isImageNode(node) {
   return node && node.type === 'RECTANGLE' && node.fills && node.fills.some(f => f.type === 'IMAGE');
 }
@@ -223,29 +150,6 @@ function getCornerRadius(node) {
   return (node && node.cornerRadius) || 0;
 }
 
-function interpretBlendMode(value) {
-  switch (value) {
-    case 'PASS_THROUGH':
-    case 'NORMAL': return 'normal';
-    case 'MULTIPLY': return 'multiply';
-    case 'SCREEN': return 'screen';
-    case 'OVERLAY': return 'overlay';
-    case 'DARKEN': return 'darken';
-    case 'LIGHTEN': return 'lighten';
-    case 'COLOR_DODGE': return 'color-dodge';
-    case 'COLOR_BURN': return 'color-burn';
-    case 'HARD_LIGHT': return 'hard-light';
-    case 'SOFT_LIGHT': return 'soft-light';
-    case 'DIFFERENCE': return 'difference';
-    case 'EXCLUSION': return 'exclusion';
-    case 'HUE': return 'hue';
-    case 'SATURATION': return 'saturation';
-    case 'COLOR': return 'color';
-    case 'LUMINOSITY': return 'luminosity';
-    default: return (value && value.toLowerCase().replaceAll('_', '-')) || 'normal';
-  }
-}
-
 function getBlendMode(node) {
   return interpretBlendMode(node && node.blendMode);
 }
@@ -255,33 +159,10 @@ function getShadowPresence(node) {
   return effects.some(effect => effect.type === 'DROP_SHADOW');
 }
 
+
 // --- Text Detection
 function getTextContent(node) {
   return (node && node.characters) || '';
-}
-
-function interpretFontWeight(style) {
-  if (!style || typeof style !== 'string') return null;
-  const normalized = style.trim().toLowerCase();
-
-  switch (normalized) {
-    case 'thin':
-    case 'hairline': return 100;
-    case 'extra light':
-    case 'ultralight': return 200;
-    case 'light': return 300;
-    case 'regular':
-    case 'normal': return 400;
-    case 'medium': return 500;
-    case 'semibold':
-    case 'demibold': return 600;
-    case 'bold': return 700;
-    case 'extra bold':
-    case 'ultrabold': return 800;
-    case 'black':
-    case 'heavy': return 900;
-    default: return null;
-  }
 }
 
 function getFontStyle(node) {
@@ -319,10 +200,128 @@ function getTextStyleId(node) {
   return (node && node.textStyleId) || null;
 }
 
+
+
+
 // ================================
-// ✳️ PROCESSORS
+// ✳️ INTERPRETATION
 // ================================
 
+
+// --- Layout Interpretation
+function interpretAlignment(value) {
+  switch (value) {
+    case 'MIN': return 'flex-start';
+    case 'MAX': return 'flex-end';
+    case 'CENTER': return 'center';
+    case 'SPACE_BETWEEN': return 'space-between';
+    case 'SPACE_AROUND': return 'space-around';
+    default: return (value && value.toLowerCase().replaceAll('_', '-')) || 'undefined';
+  }
+}
+
+
+// --- Position Interpretation
+function interpretConstraint(value, axis) {
+  if (axis === 'horizontal') {
+    switch (value) {
+      case 'MIN': return 'left';
+      case 'MAX': return 'right';
+      case 'CENTER': return 'center';
+      case 'STRETCH': return 'stretch';
+      case 'SCALE': return 'scale';
+      default: return (value && value.toLowerCase()) || 'undefined';
+    }
+  } else if (axis === 'vertical') {
+    switch (value) {
+      case 'MIN': return 'top';
+      case 'MAX': return 'bottom';
+      case 'CENTER': return 'center';
+      case 'STRETCH': return 'stretch';
+      case 'SCALE': return 'scale';
+      default: return (value && value.toLowerCase()) || 'undefined';
+    }
+  }
+  return 'undefined';
+}
+
+
+// --- Style Interpretation
+function rgbToHex(color) {
+  const r = Math.round(color.r * 255);
+  const g = Math.round(color.g * 255);
+  const b = Math.round(color.b * 255);
+  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+function interpretFillType(type) {
+  switch (type) {
+    case 'SOLID': return 'solid';
+    case 'LINEAR_GRADIENT': return 'linear-gradient';
+    case 'RADIAL_GRADIENT': return 'radial-gradient';
+    case 'ANGULAR_GRADIENT': return 'conic-gradient';
+    default: return (type && type.toLowerCase()) || 'unknown';
+  }
+}
+
+function interpretBlendMode(value) {
+  switch (value) {
+    case 'PASS_THROUGH':
+    case 'NORMAL': return 'normal';
+    case 'MULTIPLY': return 'multiply';
+    case 'SCREEN': return 'screen';
+    case 'OVERLAY': return 'overlay';
+    case 'DARKEN': return 'darken';
+    case 'LIGHTEN': return 'lighten';
+    case 'COLOR_DODGE': return 'color-dodge';
+    case 'COLOR_BURN': return 'color-burn';
+    case 'HARD_LIGHT': return 'hard-light';
+    case 'SOFT_LIGHT': return 'soft-light';
+    case 'DIFFERENCE': return 'difference';
+    case 'EXCLUSION': return 'exclusion';
+    case 'HUE': return 'hue';
+    case 'SATURATION': return 'saturation';
+    case 'COLOR': return 'color';
+    case 'LUMINOSITY': return 'luminosity';
+    default: return (value && value.toLowerCase().replaceAll('_', '-')) || 'normal';
+  }
+}
+
+
+// --- Text Interpretation
+function interpretFontWeight(style) {
+  if (!style || typeof style !== 'string') return null;
+  const normalized = style.trim().toLowerCase();
+
+  switch (normalized) {
+    case 'thin':
+    case 'hairline': return 100;
+    case 'extra light':
+    case 'ultralight': return 200;
+    case 'light': return 300;
+    case 'regular':
+    case 'normal': return 400;
+    case 'medium': return 500;
+    case 'semibold':
+    case 'demibold': return 600;
+    case 'bold': return 700;
+    case 'extra bold':
+    case 'ultrabold': return 800;
+    case 'black':
+    case 'heavy': return 900;
+    default: return null;
+  }
+}
+
+
+
+
+// ================================
+// ✳️ PROCESSING
+// ================================
+
+
+// --- Layout Processing
 function processLayoutUI(node) {
   if (node.type === 'TEXT') return null;
   const alignment = getLayoutAlignment(node);
@@ -337,6 +336,8 @@ function processLayoutUI(node) {
   };
 }
 
+
+// --- Position Processing
 function processPositionUI(node) {
   const pos = getPosition(node);
   const size = getSize(node);
@@ -356,6 +357,8 @@ function processPositionUI(node) {
   };
 }
 
+
+// --- Style Processing
 function processStyleUI(node) {
   const { fill, image } = getFillAndImage(node);
   const stroke = getStroke(node);
@@ -378,6 +381,8 @@ function processStyleUI(node) {
   };
 }
 
+
+// --- Text Processing
 function processTextUI(node) {
   const styleName = getStyleNameById(node && node.textStyleId, 'text');
   const styleDef = node && node.textStyleId
@@ -419,6 +424,15 @@ function processTextUI(node) {
   };
 }
 
+
+
+
+// ================================
+// ✳️ CORE
+// ================================
+
+
+// --- Master Processing
 function processNodeProperties(node) {
   const className = sanitizeClassName(node.name);
   if (!node) return null;
@@ -443,35 +457,8 @@ function processNodeProperties(node) {
   };
 }
 
-// ================================
-// ✳️ CLASSNAME SANITIZER
-// ================================
 
-function sanitizeClassName(name) {
-  if (typeof name !== 'string') return '';
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\-_]/g, '');
-}
-
-// ================================
-// ✳️ HTML TAG INTERPRETER
-// ================================
-
-function getHtmlTagFromType(type, node) {
-  if (type === 'IMAGE') return 'img';
-  if (type === 'TEXT') return 'span';
-  if (type === 'LINE') return 'hr';
-  if (type === 'ELLIPSE') return 'div';
-  if (type === 'FRAME' || type === 'GROUP' || type === 'INSTANCE' || type === 'COMPONENT') return 'div';
-  return 'div';
-}
-
-// ================================
-// ✳️ RECURSIVE TRAVERSAL WITH Z-INDEX
-// ================================
-
+// --- Recursive Node Traversal
 function traverseNodeTree(node, inheritedZ = null, path = '') {
   if (!node || node.removed || node.visible === false) return null;
 
@@ -537,10 +524,56 @@ function traverseNodeTree(node, inheritedZ = null, path = '') {
   return processed;
 }
 
+
+
+
 // ================================
-// ✳️ RECURSIVE LOGGER
+// ✳️ UTILS
 // ================================
 
+
+// --- Classname Sanitizer
+function sanitizeClassName(name) {
+  if (typeof name !== 'string') return '';
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\-_]/g, '');
+}
+
+
+// --- HTML Tag Interpreter
+function getHtmlTagFromType(type, node) {
+  if (type === 'IMAGE') return 'img';
+  if (type === 'TEXT') return 'span';
+  if (type === 'LINE') return 'hr';
+  if (type === 'ELLIPSE') return 'div';
+  if (type === 'FRAME' || type === 'GROUP' || type === 'INSTANCE' || type === 'COMPONENT') return 'div';
+  return 'div';
+}
+
+
+// --- Style Name Resolver
+function getStyleNameById(styleId, styleType) {
+  let styles = [];
+  switch (styleType) {
+    case 'text':
+      styles = figma.getLocalTextStyles();
+      break;
+    case 'fill':
+    case 'stroke':
+      styles = figma.getLocalPaintStyles();
+      break;
+    case 'effect':
+      styles = figma.getLocalEffectStyles();
+      break;
+  }
+  const style = styles.find(s => s.id === styleId);
+  return style ? style.name : null;
+}
+
+
+// --- Detection Log
 function logNodeOutput(node, result, depth = 0) {
   const indent = '  '.repeat(depth);
   console.log(`${indent}🧩 Node: [HTML Tag] ${result.tag} [Class] .${result.className} [Layer Name] ${result.name} [Type] ${result.type} [ID] ${result.id}`);
@@ -561,10 +594,15 @@ function logNodeOutput(node, result, depth = 0) {
   }
 }
 
+
+
+
 // ================================
-// ✳️ ENTRY POINT
+// ✳️ RUNTIME
 // ================================
 
+
+// --- Selection Handler
 function handleSelection(node) {
   if (!node) {
     console.warn("No node selected.");
@@ -614,19 +652,21 @@ function handleSelection(node) {
   });
 }
 
-// ================================
-// ✳️ FIGMA PLUGIN BOOTSTRAP
-// ================================
 
-figma.showUI(__html__, { visible: true, width: 300, height: 200 });
+// --- Event Bridge
+function registerPluginEvents() {
+  figma.showUI(__html__, { visible: true, width: 300, height: 200 });
 
-figma.ui.onmessage = msg => {
-  if (msg.type === 'start-export') {
-    const node = figma.currentPage.selection[0];
-    if (!node) {
-      figma.notify("Please select a node first.");
-      return;
+  figma.ui.onmessage = msg => {
+    if (msg.type === 'start-export') {
+      const node = figma.currentPage.selection[0];
+      if (!node) {
+        figma.notify("Please select a node first.");
+        return;
+      }
+      handleSelection(node);
     }
-    handleSelection(node);
-  }
-};
+  };
+}
+
+registerPluginEvents();
