@@ -2,6 +2,7 @@
 
 // ================================
 // ✳️ STYLE NAME HELPERS
+// ================================
 
 function getStyleNameById(styleId, styleType) {
   let styles = [];
@@ -23,6 +24,7 @@ function getStyleNameById(styleId, styleType) {
 
 // ================================
 // ✳️ DETECTION FUNCTIONS
+// ================================
 
 // [Insert full detection functions here — imported from original plugin version]
 // --- Layout Detection
@@ -258,11 +260,36 @@ function getTextContent(node) {
   return (node && node.characters) || '';
 }
 
+function interpretFontWeight(style) {
+  if (!style || typeof style !== 'string') return null;
+  const normalized = style.trim().toLowerCase();
+
+  switch (normalized) {
+    case 'thin':
+    case 'hairline': return 100;
+    case 'extra light':
+    case 'ultralight': return 200;
+    case 'light': return 300;
+    case 'regular':
+    case 'normal': return 400;
+    case 'medium': return 500;
+    case 'semibold':
+    case 'demibold': return 600;
+    case 'bold': return 700;
+    case 'extra bold':
+    case 'ultrabold': return 800;
+    case 'black':
+    case 'heavy': return 900;
+    default: return null;
+  }
+}
+
 function getFontStyle(node) {
   return {
     fontSize: (node && node.fontSize) || null,
     fontName: (node && node.fontName && node.fontName.family) || null,
-    fontStyle: (node && node.fontName && node.fontName.style) || null
+    fontStyle: (node && node.fontName && node.fontName.style) || null,
+    fontWeight: interpretFontWeight((node && node.fontName && node.fontName.style) || null)
   };
 }
 
@@ -294,6 +321,7 @@ function getTextStyleId(node) {
 
 // ================================
 // ✳️ PROCESSORS
+// ================================
 
 function processLayoutUI(node) {
   if (node.type === 'TEXT') return null;
@@ -357,10 +385,11 @@ function processTextUI(node) {
     : null;
 
   const font = styleDef
-    ? {
-        fontSize: styleDef.fontSize,
-        fontName: styleDef.fontName.family,
-        fontStyle: styleDef.fontName.style
+  ? {
+      fontSize: styleDef.fontSize,
+      fontName: styleDef.fontName.family,
+      fontStyle: styleDef.fontName.style,
+      fontWeight: interpretFontWeight(styleDef.fontName.style)
       }
     : getFontStyle(node);
 
@@ -380,6 +409,7 @@ function processTextUI(node) {
     fontSize: font.fontSize,
     fontName: font.fontName,
     fontStyle: font.fontStyle,
+    fontWeight: font.fontWeight,
     alignment: getTextAlignment(node),
     letterSpacing: spacing.letterSpacing,
     lineHeight: spacing.lineHeight,
@@ -399,6 +429,8 @@ function processNodeProperties(node) {
   return {
     id: node.id,
     name: node.name,
+    tag: getHtmlTagFromType(node.type, node),
+    className: className,
     type: isImageNode(node) ? 'IMAGE' : node.type,
     position: processPositionUI(node),
     layout: processLayoutUI(node),
@@ -413,6 +445,7 @@ function processNodeProperties(node) {
 
 // ================================
 // ✳️ CLASSNAME SANITIZER
+// ================================
 
 function sanitizeClassName(name) {
   if (typeof name !== 'string') return '';
@@ -424,6 +457,7 @@ function sanitizeClassName(name) {
 
 // ================================
 // ✳️ HTML TAG INTERPRETER
+// ================================
 
 function getHtmlTagFromType(type, node) {
   if (type === 'IMAGE') return 'img';
@@ -436,6 +470,7 @@ function getHtmlTagFromType(type, node) {
 
 // ================================
 // ✳️ RECURSIVE TRAVERSAL WITH Z-INDEX
+// ================================
 
 function traverseNodeTree(node, inheritedZ = null, path = '') {
   if (!node || node.removed || node.visible === false) return null;
@@ -504,10 +539,11 @@ function traverseNodeTree(node, inheritedZ = null, path = '') {
 
 // ================================
 // ✳️ RECURSIVE LOGGER
+// ================================
 
 function logNodeOutput(node, result, depth = 0) {
   const indent = '  '.repeat(depth);
-  console.log(`${indent}🧩 Node: [Layer] ${result.name} [Type] ${getHtmlTagFromType(result.type, node)} (${result.id}) — [Class] .${result.className}`);
+  console.log(`${indent}🧩 Node: [HTML Tag] ${result.tag} [Class] .${result.className} [Layer Name] ${result.name} [Type] ${result.type} [ID] ${result.id}`);
 
   if (result.treePath) console.log(`${indent}🧭 Tree Path: ${result.treePath}`);
   if (result.position) console.log(`${indent}📐 Position:`, result.position);
@@ -527,6 +563,7 @@ function logNodeOutput(node, result, depth = 0) {
 
 // ================================
 // ✳️ ENTRY POINT
+// ================================
 
 function handleSelection(node) {
   if (!node) {
@@ -535,16 +572,61 @@ function handleSelection(node) {
   }
 
   const tree = traverseNodeTree(node);
-  logNodeOutput(node, tree, 0);
-  return tree;
+  figma.ui.postMessage({
+    type: 'export-tree-to-server',
+    tree
+  });
+
+  // Also trigger font resolution from UI
+  figma.ui.postMessage({
+    type: 'trigger-font-resolution'
+  });
+
+  // 🔽 Detect and post image data
+  const imagePromises = [];
+
+  function collectImageNodes(node) {
+    if (isImageNode(node) && node.fills) {
+      const imageFill = node.fills.find(f => f.type === 'IMAGE');
+      if (imageFill && imageFill.imageHash) {
+        const promise = figma.getImageByHash(imageFill.imageHash).getBytesAsync()
+          .then(bytes => {
+            figma.ui.postMessage({
+              type: 'export-image',
+              bytes: Array.from(bytes),
+              name: sanitizeClassName(node.name || 'image') + '.png'
+            });
+          })
+          .catch(err => {
+            console.warn('⚠️ Failed to extract image for', node.name, err);
+          });
+        imagePromises.push(promise);
+      }
+    }
+    if ('children' in node && Array.isArray(node.children)) {
+      node.children.forEach(collectImageNodes);
+    }
+  }
+
+  collectImageNodes(node);
+  Promise.all(imagePromises).then(() => {
+    console.log('📦 All image exports complete');
+  });
 }
 
 // ================================
 // ✳️ FIGMA PLUGIN BOOTSTRAP
+// ================================
 
 figma.showUI(__html__, { visible: true, width: 300, height: 200 });
 
-figma.on("selectionchange", () => {
-  const node = figma.currentPage.selection[0];
-  handleSelection(node);
-});
+figma.ui.onmessage = msg => {
+  if (msg.type === 'start-export') {
+    const node = figma.currentPage.selection[0];
+    if (!node) {
+      figma.notify("Please select a node first.");
+      return;
+    }
+    handleSelection(node);
+  }
+};
