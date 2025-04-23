@@ -30,4 +30,4 @@ build/
 # Cache directories
 .cache/
 .npm/
-.eslintcache 
+.eslintcache node_modules/
