@@ -1,4 +1,4 @@
-function logNodeOutput(node, result, depth = 0) {
+export function logNodeOutput(node, result, depth = 0) {
   const indent = '  '.repeat(depth);
   console.log(`${indent}🧩 Node: [HTML Tag] ${result.tag} [Class] .${result.className} [Layer Name] ${result.name} [Type] ${result.type} [ID] ${result.id}`);
 

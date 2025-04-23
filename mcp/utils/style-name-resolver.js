@@ -1,4 +1,4 @@
-function getStyleNameById(styleId, styleType) {
+export function getStyleNameById(styleId, styleType) {
   let styles = [];
   switch (styleType) {
     case 'text':

@@ -1,4 +1,8 @@
-function handleSelection(node) {
+import { traverseNodeTree } from '../core/recursive-node-traversal.js';
+import { isImageNode } from '../detection/style-detection.js';
+import { sanitizeClassName } from '../utils/classname-sanitizer.js';
+
+export function handleSelection(node) {
   if (!node) {
     console.warn("No node selected.");
     return null;

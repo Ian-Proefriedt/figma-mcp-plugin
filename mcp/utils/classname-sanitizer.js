@@ -1,4 +1,4 @@
-function sanitizeClassName(name) {
+export function sanitizeClassName(name) {
   if (typeof name !== 'string') return '';
   return name
     .toLowerCase()

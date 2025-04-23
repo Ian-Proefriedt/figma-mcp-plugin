@@ -1,4 +1,13 @@
-function processLayoutUI(node) {
+import {
+  isAutoLayout,
+  getLayoutDirection,
+  getLayoutAlignment,
+  getItemSpacing,
+  getPadding,
+  getLayoutWrap
+} from '../detection/layout-detection.js';
+
+export function processLayoutUI(node) {
   if (node.type === 'TEXT') return null;
   const alignment = getLayoutAlignment(node);
   return {

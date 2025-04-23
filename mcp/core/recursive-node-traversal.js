@@ -1,4 +1,7 @@
-function traverseNodeTree(node, inheritedZ = null, path = '') {
+import { processNodeProperties } from './master-processing.js';
+import { getFixedStatus, isOverlapping } from '../detection/position-detection.js';
+
+export function traverseNodeTree(node, inheritedZ = null, path = '') {
   if (!node || node.removed || node.visible === false) return null;
 
   const isFixed = getFixedStatus(node);

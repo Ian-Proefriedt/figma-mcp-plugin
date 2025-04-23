@@ -1,4 +1,15 @@
-function processPositionUI(node) {
+import {
+  getPosition,
+  getSize,
+  getSizingModes,
+  getRotation,
+  getConstraints,
+  getPositioning,
+  getClipping,
+  getZIndex
+} from '../detection/position-detection.js';
+
+export function processPositionUI(node) {
   const pos = getPosition(node);
   const size = getSize(node);
   const sizing = getSizingModes(node);

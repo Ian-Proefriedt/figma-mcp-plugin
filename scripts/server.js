@@ -50,7 +50,7 @@ app.post('/save-tree', (req, res) => {
 
 app.post('/resolve-fonts', (req, res) => {
   console.log('🔁 Received font resolution request');
-  exec('node mcp/scripts/generate-fonts.js && node mcp/scripts/resolve-local-fonts.js && node mcp/scripts/resolve-google-fonts.js', (err, stdout, stderr) => {
+  exec('node scripts/generate-fonts.js && node scripts/resolve-local-fonts.js && node scripts/resolve-google-fonts.js', (err, stdout, stderr) => {
     if (err) {
       console.error('❌ Font resolution failed:', err);
       return res.status(500).send('Font resolution failed');

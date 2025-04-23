@@ -1,15 +1,26 @@
-function processTextUI(node) {
+import {
+  getTextContent,
+  getFontStyle,
+  getTextAlignment,
+  getTextSpacing,
+  getTextCaseAndDecoration
+} from '../detection/text-detection.js';
+
+import { interpretFontWeight } from '../interpretation/text-interpretation.js';
+import { getStyleNameById } from '../utils/style-name-resolver.js';
+
+export function processTextUI(node) {
   const styleName = getStyleNameById(node && node.textStyleId, 'text');
   const styleDef = node && node.textStyleId
     ? figma.getLocalTextStyles().find(s => s.id === node.textStyleId)
     : null;
 
   const font = styleDef
-  ? {
-      fontSize: styleDef.fontSize,
-      fontName: styleDef.fontName.family,
-      fontStyle: styleDef.fontName.style,
-      fontWeight: interpretFontWeight(styleDef.fontName.style)
+    ? {
+        fontSize: styleDef.fontSize,
+        fontName: styleDef.fontName.family,
+        fontStyle: styleDef.fontName.style,
+        fontWeight: interpretFontWeight(styleDef.fontName.style)
       }
     : getFontStyle(node);
 

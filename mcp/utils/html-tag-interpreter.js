@@ -1,4 +1,4 @@
-function getHtmlTagFromType(type, node) {
+export function getHtmlTagFromType(type, node) {
   if (type === 'IMAGE') return 'img';
   if (type === 'TEXT') return 'span';
   if (type === 'LINE') return 'hr';

@@ -1,4 +1,13 @@
-function processNodeProperties(node) {
+import { processLayoutUI } from '../processing/layout-processing.js';
+import { processPositionUI } from '../processing/position-processing.js';
+import { processStyleUI } from '../processing/style-processing.js';
+import { processTextUI } from '../processing/text-processing.js';
+
+import { sanitizeClassName } from '../utils/classname-sanitizer.js';
+import { getHtmlTagFromType } from '../utils/html-tag-interpreter.js';
+import { isImageNode } from '../detection/style-detection.js';
+
+export function processNodeProperties(node) {
   const className = sanitizeClassName(node.name);
   if (!node) return null;
   const isComponent = node.type === 'COMPONENT';

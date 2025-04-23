@@ -1,4 +1,6 @@
-function registerPluginEvents() {
+import { handleSelection } from './selection-handler.js';
+
+export function registerPluginEvents() {
   figma.showUI(__html__, { visible: true, width: 300, height: 200 });
 
   figma.ui.onmessage = msg => {

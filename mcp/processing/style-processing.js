@@ -1,4 +1,14 @@
-function processStyleUI(node) {
+import {
+  getFillAndImage,
+  getStroke,
+  getCornerRadius,
+  getBlendMode,
+  getShadowPresence
+} from '../detection/style-detection.js';
+
+import { getStyleNameById } from '../utils/style-name-resolver.js';
+
+export function processStyleUI(node) {
   const { fill, image } = getFillAndImage(node);
   const stroke = getStroke(node);
   const fillStyleName = getStyleNameById(fill && fill.styleId, 'fill');
