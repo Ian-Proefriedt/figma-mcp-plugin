@@ -1,17 +1,16 @@
 {
-  "name": "figma-mcp-plugin",
+  "name": "figma-to-code-export-plugin",
   "version": "1.0.0",
-  "description": "Figma plugin for Material Component Properties",
-  "main": "mcp/test-plugin.js",
+  "description": "Figma plugin for exporting nodes to code",
+  "main": "src/plugin.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node mcp/start-mcp.cjs",
+    "start": "node server.js",
     "build": "webpack --mode=production",
-    "dev": "cross-env WEBPACK_WATCH=true webpack --mode=development --watch",
-    "mcp": "node mcp/start-mcp.cjs"
+    "watch": "webpack --mode=development --watch",
+    "dev": "concurrently -n \"webpack,server\" -c \"yellow,cyan\" \"npm run watch\" \"node server.js\""
   },
   "keywords": [],
   "author": "Ian Proefriedt",
@@ -28,6 +27,7 @@
     "@babel/core": "^7.23.9",
     "@babel/preset-env": "^7.23.9",
     "babel-loader": "^9.1.3",
+    "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "css-loader": "^6.10.0",
     "html-inline-script-webpack-plugin": "^3.2.1",

@@ -1,3 +1,3 @@
-import { registerPluginEvents } from '../mcp/runtime/event-bridge.js';
+import { registerPluginEvents } from '../plugin/runtime/event-bridge.js';
 
 registerPluginEvents();

@@ -1,6 +1,5 @@
 // server.js
 // A simple local image receiver that listens for streamed image data
-
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -10,20 +9,21 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = 3001;
 
-const outputDir = path.resolve(__dirname, '../data/images');
-if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Ensure image directory exists
+const imageDir = path.resolve(__dirname, 'data/images');
+if (!fs.existsSync(imageDir)) fs.mkdirSync(imageDir, { recursive: true });
 
 app.post('/save-image', (req, res) => {
   const { name, bytes } = req.body;
   if (!name || !bytes) return res.status(400).send('Missing name or bytes');
 
-  const buffer = Buffer.from(bytes);
-  const filePath = path.join(outputDir, name);
+  const filePath = path.resolve(__dirname, 'data/images', name);
+  console.log('🧾 Writing to:', filePath);
 
-  fs.writeFile(filePath, buffer, err => {
+  fs.writeFile(filePath, Buffer.from(bytes), err => {
     if (err) {
       console.error(`❌ Failed to save ${name}:`, err);
       return res.status(500).send('Write failed');
@@ -37,7 +37,12 @@ app.post('/save-tree', (req, res) => {
   const { name, contents } = req.body;
   if (!name || !contents) return res.status(400).send('Missing name or contents');
 
-  const filePath = path.join(__dirname, '../data/', name);
+  const filePath = path.resolve(__dirname, 'data', name);
+  console.log('🌳 __dirname:', __dirname);
+  console.log('🌳 Incoming name:', name);
+  console.log('🌳 Resolved path:', filePath);
+  console.log('🧾 Writing to:', filePath);
+
   fs.writeFile(filePath, JSON.stringify(contents, null, 2), err => {
     if (err) {
       console.error(`❌ Failed to save tree:`, err);
@@ -61,5 +66,7 @@ app.post('/resolve-fonts', (req, res) => {
 });
 
 app.listen(PORT, () => {
+  console.log('🧭 __dirname:', __dirname);
+  console.log('📂 process.cwd():', process.cwd());
   console.log(`🖼 Data Transfer Automation Active at http://localhost:${PORT}`);
 });

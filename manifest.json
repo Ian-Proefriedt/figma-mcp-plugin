@@ -1,9 +1,9 @@
 {
-  "name": "MCP Test Plugin",
-  "id": "figma-mcp-plugin",
+  "name": "Figma to Code Plugin",
+  "id": "figma-to-code-plugin",
   "api": "1.0.0",
   "main": "dist/plugin.js",
-  "ui": "mcp/runtime/plugin-ui.html",
+  "ui": "plugin/runtime/plugin-ui.html",
   "editorType": ["figma", "dev"],
   "capabilities": ["inspect"],
   "networkAccess": {
