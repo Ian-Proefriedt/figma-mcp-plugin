@@ -9,10 +9,16 @@ const fontkit = require('fontkit');
 const FONT_LIST_PATH = path.resolve(__dirname, '../data/fonts-needed.json');
 const OUTPUT_DIR = path.resolve(__dirname, '../data/fonts');
 
-const SYSTEM_FONT_DIRS = [
-  'C:/Windows/Fonts',
-  'C:/Users/' + process.env.USERNAME + '/AppData/Local/Microsoft/Windows/Fonts'
-];
+const SYSTEM_FONT_DIRS = process.platform === 'darwin'
+  ? [
+      '/System/Library/Fonts',
+      '/Library/Fonts',
+      path.resolve(process.env.HOME || '', 'Library/Fonts')
+    ]
+  : [
+      'C:/Windows/Fonts',
+      `C:/Users/${process.env.USERNAME}/AppData/Local/Microsoft/Windows/Fonts`
+    ];
 
 function findFontsRecursively(dir, files = []) {
   if (!fs.existsSync(dir)) return files;
@@ -72,7 +78,11 @@ async function main() {
   for (const requested of fontRequests) {
     const match = matchFont(requested, allFontMeta);
     if (match) {
-      const safeName = `${requested.family.replace(/\s+/g, '')}-${requested.style}.woff2`;
+      const safeName = `${requested.family}-${requested.style}`
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[^\w-]/g, '') + '.woff2';
+
       const out = await convertAndSaveTTF(match.filePath, safeName);
       console.log(`✅ Found and converted: ${requested.family} — ${requested.style} → ${out}`);
     } else {
