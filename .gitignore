@@ -41,3 +41,10 @@ data/images/*
 
 data/fonts/*
 !data/fonts/.gitkeep
+
+
+# Local Node and Python installations
+setup/node/
+setup/node_modules/
+setup/python/
+*.zip
