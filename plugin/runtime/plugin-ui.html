@@ -1,16 +1,180 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Test Plugin</title>
+  <title>Figma To Code Plugin</title>
+
+
+
+  
+  <!-- ================================ -->
+  <!-- ✳️ STYLES -->
+  <!-- ================================ -->
+ 
+  
+  <style>
+    /* ====== Theme Tokens ====== */
+    :root {
+      --bg-color: #1E1E1E;
+      --panel-color: #2C2C2C;
+      --border-color: #3C3C3C;
+      --text-color: #E5E5E5;
+      --label-color: #A5A5A5;
+      --accent-color: #4C8BFF;
+      --radius: 4px;
+      --padding: 12px;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      font-family: sans-serif;
+      color: var(--text-color);
+      font-size: 13px;
+    }    
+
+    
+    /* ====== Component Styles ====== */
+    .property-block {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .property-label {
+      color: var(--label-color);
+      font-weight: 500;
+    }
+
+    .property-value {
+      color: var(--text-color);
+      text-align: right;
+      word-break: break-word;
+    }
+    .plugin-container {
+      display: flex;
+      flex-direction: column;
+      padding: var(--padding);
+    }
+
+    .selection-title {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: var(--padding);
+    }
+
+    .section {
+      background: var(--panel-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      margin-bottom: var(--padding);
+    }
+
+    .section-header {
+      padding: var(--padding);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: bold;
+      color: var(--label-color);
+    }
+
+    .section-content-wrapper {
+      padding: var(--padding);
+      display: none;
+    }
+
+    .section.open .section-content-wrapper {
+      display: block;
+    }
+
+    .properties-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+    }
+
+    .export-button {
+      margin-top: auto;
+      padding: 10px 16px;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <div id="test-plugin"></div>
-  <button onclick="parent.postMessage({ pluginMessage: { type: 'start-export' } }, '*')">
-    Export Tree + Images + Fonts
-  </button>  
 
+
+
+  
+  <!-- ================================ -->
+  <!-- ✳️ STRUCTURE -->
+  <!-- ================================ -->
+           
+  
+    <!-- ====== Plugin Header UI ====== -->
+    <div class="plugin-container">
+    <div class="selection-title">
+      Selected Node
+    </div>
+
+      
+    <!-- ====== Layout Section UI ====== -->
+    <div class="section" id="layout-section">
+      <div class="section-header">Layout</div>
+      <div class="section-content-wrapper">
+        <div class="properties-grid" id="layout-properties"></div>
+      </div>
+    </div>
+
+      
+    <!-- ====== Position & Size Section UI ====== -->
+    <div class="section" id="position-size-section">
+      <div class="section-header">Position & Size</div>
+      <div class="section-content-wrapper">
+        <div class="properties-grid" id="position-properties"></div>
+      </div>
+    </div>
+
+      
+    <!-- ====== Style Section UI ====== -->
+    <div class="section" id="style-section">
+      <div class="section-header">Style</div>
+      <div class="section-content-wrapper">
+        <div class="properties-grid" id="style-properties"></div>
+      </div>
+    </div>
+
+    <!-- ====== Text Section UI ====== -->
+    <div class="section" id="text-section">
+      <div class="section-header">Text</div>
+      <div class="section-content-wrapper">
+        <div class="properties-grid" id="text-properties"></div>
+      </div>
+    </div>
+
+    <!-- ====== Export Trigger ====== -->
+    <button class="export-button" onclick="parent.postMessage({ pluginMessage: { type: 'start-export' } }, '*')">
+      Export Tree + Images + Fonts
+    </button>
+  </div>
+
+
+
+  
+  <!-- ================================ -->
+  <!-- ✳️ EXPORT HANDLERS -->
+  <!-- ================================ -->
   <script>
-    const useServer = true; // Toggle this to false to fallback to manual downloads
+
+    // ====== Export Tree Handler ======
+    const useServer = true;
 
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
@@ -20,21 +184,14 @@
           fetch('http://localhost:3001/save-tree', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: 'tree.json',
-              contents: msg.tree
-            })
-          }).then(res => {
-            if (!res.ok) throw new Error('Tree save failed');
-            console.log('🌳 Streamed tree.json to server');
-          }).catch(err => {
-            console.error('❌ Server tree.json export failed:', err);
-          });
+            body: JSON.stringify({ name: 'tree.json', contents: msg.tree })
+          })
+          .then(res => { if (!res.ok) throw new Error('Tree save failed'); console.log('🌳 Streamed tree.json to server'); })
+          .catch(err => console.error('❌ Server tree.json export failed:', err));
         } else {
           const json = JSON.stringify(msg.tree, null, 2);
           const blob = new Blob([json], { type: 'application/json' });
           const url = URL.createObjectURL(blob);
-
           const link = document.createElement('a');
           link.href = url;
           link.download = 'tree.json';
@@ -43,26 +200,20 @@
         }
       }
 
+      // ====== Export Image Handler ======
       if (msg?.type === 'export-image') {
         if (useServer) {
           fetch('http://localhost:3001/save-image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: msg.name || 'image.png',
-              bytes: msg.bytes
-            })
-          }).then(res => {
-            if (!res.ok) throw new Error('Failed to save via server');
-            console.log(`📡 Streamed image to server: ${msg.name}`);
-          }).catch(err => {
-            console.error('❌ Server image export failed:', err);
-          });
+            body: JSON.stringify({ name: msg.name || 'image.png', bytes: msg.bytes })
+          })
+          .then(res => { if (!res.ok) throw new Error('Failed to save via server'); console.log(`📡 Streamed image to server: ${msg.name}`); })
+          .catch(err => console.error('❌ Server image export failed:', err));
         } else {
           const byteArray = new Uint8Array(msg.bytes);
           const blob = new Blob([byteArray], { type: 'image/png' });
           const url = URL.createObjectURL(blob);
-
           const link = document.createElement('a');
           link.href = url;
           link.download = msg.name || 'image.png';
@@ -71,17 +222,110 @@
         }
       }
 
+      // ====== Font Resolution Handler ======
       if (msg?.type === 'trigger-font-resolution') {
-        fetch('http://localhost:3001/resolve-fonts', {
-          method: 'POST'
-        }).then(res => {
-          if (!res.ok) throw new Error('Font resolution failed');
-          console.log('🧩 Fonts resolved.');
-        }).catch(err => {
-          console.error('❌ Font resolution error:', err);
-        });
+        fetch('http://localhost:3001/resolve-fonts', { method: 'POST' })
+          .then(res => { if (!res.ok) throw new Error('Font resolution failed'); console.log('🧩 Fonts resolved.'); })
+          .catch(err => console.error('❌ Font resolution error:', err));
       }
     };
+
+    // ====== Section Toggle Handler ======
+    function setupSectionToggles() {
+      document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', () => {
+          header.parentElement.classList.toggle('open');
+        });
+      });
+    }
+
+    // Run section toggle logic on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setupSectionToggles();
+    });
+
+    // ====== Property Block Rendering ======
+    function renderPropertyBlock(containerId, label, value) {
+      const container = document.getElementById(containerId);
+      if (!container || value === undefined || value === null) return;
+      const block = document.createElement('div');
+      block.className = 'property-block';
+      block.innerHTML = `
+        <div class="property-label">${label}</div>
+        <div class="property-value">${value}</div>
+      `;
+      container.appendChild(block);
+    }
+
+    // ====== Property Map ======
+    const PropertyMap = {
+      layout: [
+        { key: 'type', label: 'Type', fromRoot: true },
+        { key: 'direction', label: 'Direction' },
+        { key: 'justifyContent', label: 'Justify Content' },
+        { key: 'alignItems', label: 'Align Items' },
+        { key: 'gap', label: 'Gap' },
+        { key: 'padding', label: 'Padding' },
+        { key: 'wrap', label: 'Wrap' }
+      ],
+      position: [
+        { key: 'x', label: 'X' },
+        { key: 'y', label: 'Y' },
+        { key: 'width', label: 'Width' },
+        { key: 'widthMode', label: 'Width Mode' },
+        { key: 'height', label: 'Height' },
+        { key: 'heightMode', label: 'Height Mode' },
+        { key: 'rotation', label: 'Rotation' },
+        { key: 'constraints', label: 'Constraints', transform: JSON.stringify },
+        { key: 'positioning', label: 'Positioning' },
+        { key: 'clipping', label: 'Clipping' },
+        { key: 'zIndex', label: 'Z Index' }
+      ],
+      style: [
+        { key: 'fillStyleId', label: 'Fill Style ID' },
+        { key: 'fill', label: 'Fill', transform: JSON.stringify },
+        { key: 'stroke', label: 'Stroke', transform: JSON.stringify },
+        { key: 'radius', label: 'Radius' },
+        { key: 'blendMode', label: 'Blend Mode' },
+        { key: 'shadow', label: 'Shadow' },
+        { key: 'image', label: 'Image', transform: JSON.stringify }
+      ],
+      text: [
+        { key: 'textStyleId', label: 'Text Style ID' },
+        { key: 'textContent', label: 'Text Content' },
+        { key: 'fontSize', label: 'Font Size' },
+        { key: 'fontName', label: 'Font Name' },
+        { key: 'fontStyle', label: 'Font Style' },
+        { key: 'alignment', label: 'Alignment', transform: JSON.stringify },
+        { key: 'letterSpacing', label: 'Letter Spacing' },
+        { key: 'lineHeight', label: 'Line Height' },
+        { key: 'textCase', label: 'Text Case' },
+        { key: 'textDecoration', label: 'Text Decoration' }
+      ]
+    };
+
+    // ====== Selection Message Handler ======
+    function renderAllProperties(data) {
+      for (const section in PropertyMap) {
+        const containerId = `${section}-properties`;
+        const values = section === 'layout' ? { ...data.layout, type: data.type } : data[section] || {};
+        document.getElementById(containerId).innerHTML = '';
+
+        PropertyMap[section].forEach(({ key, label, transform }) => {
+          const value = values?.[key];
+          const finalValue = transform ? transform(value) : value;
+          renderPropertyBlock(containerId, label, finalValue);
+        });
+      }
+    }
+
+    window.addEventListener('message', (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg?.type === 'selection-change' && msg.data) {
+        renderAllProperties(msg.data);
+      }
+    });
+
   </script>
 </body>
 </html>

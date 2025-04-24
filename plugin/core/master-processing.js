@@ -7,7 +7,7 @@ import { sanitizeClassName } from '../utils/classname-sanitizer.js';
 import { getHtmlTagFromType } from '../utils/html-tag-interpreter.js';
 import { isImageNode } from '../detection/style-detection.js';
 
-export function processNodeProperties(node) {
+export function processNodeProperties(node, overrides = {}) {
   const className = sanitizeClassName(node.name);
   if (!node) return null;
   const isComponent = node.type === 'COMPONENT';
@@ -20,7 +20,10 @@ export function processNodeProperties(node) {
     tag: getHtmlTagFromType(node.type, node),
     className: className,
     type: isImageNode(node) ? 'IMAGE' : node.type,
-    position: processPositionUI(node),
+    position: {
+      ...processPositionUI(node),
+      ...(overrides.position || {})
+    },
     layout: processLayoutUI(node),
     text: node.type === 'TEXT' ? processTextUI(node) : null,
     style: processStyleUI(node),

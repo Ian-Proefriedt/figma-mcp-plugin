@@ -30,4 +30,14 @@ build/
 # Cache directories
 .cache/
 .npm/
-.eslintcache node_modules/
+.eslintcache
+
+# Output data files (keep folders, ignore contents)
+data/*
+!data/.gitkeep
+
+data/images/*
+!data/images/.gitkeep
+
+data/fonts/*
+!data/fonts/.gitkeep

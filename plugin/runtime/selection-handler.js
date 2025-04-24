@@ -1,6 +1,7 @@
 import { traverseNodeTree } from '../core/recursive-node-traversal.js';
 import { isImageNode } from '../detection/style-detection.js';
 import { sanitizeClassName } from '../utils/classname-sanitizer.js';
+import { logNodeOutput } from '../utils/detection-log.js'; // ✅ Add this
 
 export function handleSelection(node) {
   if (!node) {
@@ -9,17 +10,24 @@ export function handleSelection(node) {
   }
 
   const tree = traverseNodeTree(node);
+
+  // ✅ Add your exact recursive logging here
+  logNodeOutput(node, tree);
+
   figma.ui.postMessage({
     type: 'export-tree-to-server',
     tree
   });
 
-  // Also trigger font resolution from UI
+  figma.ui.postMessage({
+    type: 'selection-change',
+    data: tree
+  });
+
   figma.ui.postMessage({
     type: 'trigger-font-resolution'
   });
 
-  // 🔽 Detect and post image data
   const imagePromises = [];
 
   function collectImageNodes(node) {

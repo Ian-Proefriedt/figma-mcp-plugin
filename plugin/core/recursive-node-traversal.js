@@ -17,9 +17,11 @@ export function traverseNodeTree(node, inheritedZ = null, path = '') {
     zIndex = (inheritedZ !== null && inheritedZ !== undefined) ? inheritedZ : 1;
   }
 
-  const processed = processNodeProperties(node);
+  const processed = processNodeProperties(node, {
+    position: { zIndex }
+  });
+
   processed.treePath = path || node.name;
-  processed.position.zIndex = zIndex;
 
   if ('children' in node && Array.isArray(node.children)) {
     const children = node.children.filter(child => !child.removed && child.visible !== false);
