@@ -5,13 +5,32 @@ set -e
 
 # Check for Python 3
 if ! command -v python3 >/dev/null; then
-  echo "❌ Python 3 is not installed. Please install it from https://www.python.org/downloads/"
+  echo ""
+  echo "❌ Python 3 is not installed."
+  echo ""
+  echo "Please install Python (which includes pip) from:"
+  echo "  https://www.python.org/ftp/python/3.11.8/python-3.11.8-macos11.pkg"
+  echo ""
+  echo "✅ During installation, make sure to CHECK the box to add Python to your PATH."
+  echo "🔁 Restart your terminal after installation."
+  echo ""
   exit 1
 fi
 
 # Check for pip3
 if ! command -v pip3 >/dev/null; then
-  echo "❌ pip3 is missing. Try reinstalling Python 3 or follow: https://pip.pypa.io/en/stable/installation/"
+  echo ""
+  echo "❌ pip3 is not installed."
+  echo ""
+  echo "Please reinstall Python (which includes pip) from:"
+  echo "  https://www.python.org/ftp/python/3.11.8/python-3.11.8-macos11.pkg"
+  echo ""
+  echo "✅ During installation, make sure to CHECK the box to add Python to your PATH."
+  echo "🔁 Restart your terminal after installation."
+  echo ""
+  echo "Or, follow the pip-only installation guide here:"
+  echo "  https://pip.pypa.io/en/stable/installation/"
+  echo ""
   exit 1
 fi
 
