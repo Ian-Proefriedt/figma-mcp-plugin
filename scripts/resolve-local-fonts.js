@@ -1,10 +1,14 @@
-// scripts/resolve-local-fonts.js
+// scripts/resolve-local-fonts.js (ESM)
 // Searches system font folders for .ttf/.otf matches and converts them to .woff2
 
-const fs = require('fs');
-const path = require('path');
-const fontkit = require('fontkit');
-// const ttf2woff2 = require('ttf2woff2'); (replaced with dynamic import)
+import fs from 'fs';
+import path from 'path';
+import * as fontkit from 'fontkit';
+import { fileURLToPath } from 'url';
+import { convertAndSaveTTF } from './font-converter.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const FONT_LIST_PATH = path.resolve(__dirname, '../data/fonts-needed.json');
 const OUTPUT_DIR = path.resolve(__dirname, '../data/fonts');
@@ -54,15 +58,6 @@ function matchFont(requested, systemFonts) {
   );
 }
 
-async function convertAndSaveTTF(inputPath, outputName) {
-  const { default: ttf2woff2 } = await import('ttf2woff2');
-  const buffer = fs.readFileSync(inputPath);
-  const woff = ttf2woff2(buffer);
-  const outputPath = path.join(OUTPUT_DIR, outputName);
-  fs.writeFileSync(outputPath, woff);
-  return outputPath;
-}
-
 async function main() {
   if (!fs.existsSync(FONT_LIST_PATH)) {
     console.error('❌ fonts-needed.json not found at', FONT_LIST_PATH);
@@ -83,7 +78,7 @@ async function main() {
         .replace(/\s+/g, '')
         .replace(/[^\w-]/g, '') + '.woff2';
 
-      const out = await convertAndSaveTTF(match.filePath, safeName);
+      const out = await convertAndSaveTTF(match.filePath, OUTPUT_DIR, safeName);
       console.log(`✅ Found and converted: ${requested.family} — ${requested.style} → ${out}`);
     } else {
       console.warn(`⚠️ Font not found: ${requested.family} — ${requested.style}`);
@@ -91,4 +86,4 @@ async function main() {
   }
 }
 
-(async () => await main())();
+main();

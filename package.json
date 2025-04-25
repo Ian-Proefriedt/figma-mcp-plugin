@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Figma plugin for exporting nodes to code",
   "main": "src/plugin.js",
+  "type": "module",
   "directories": {
     "doc": "docs"
   },

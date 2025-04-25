@@ -1,8 +1,13 @@
-// resolve-images.js
+// scripts/resolve-images.js (ESM)
 // Parses tree.json and saves image fills to /data/images
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const treePath = path.resolve(__dirname, '../data/tree.json');

@@ -1,8 +1,12 @@
-// scripts/generate-fonts.js
+// scripts/generate-fonts.js (ESM)
 // Reads tree.json and outputs a list of unique fonts to fonts-needed.json
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const TREE_PATH = path.resolve(__dirname, '../data/tree.json');
 const OUTPUT_PATH = path.resolve(__dirname, '../data/fonts-needed.json');

@@ -1,10 +1,15 @@
-// server.js
+// server.js (ESM version)
 // A simple local image receiver that listens for streamed image data
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const cors = require('cors');
-const { exec } = require('child_process');
+
+import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import cors from 'cors';
+import { exec } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3001;

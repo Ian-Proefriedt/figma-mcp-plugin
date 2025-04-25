@@ -1,8 +1,12 @@
-// webpack.config.js
+// webpack.config.js (ESM version)
 
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-module.exports = {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default {
   mode: 'development', // Use 'production' when you're ready to ship
   entry: './src/plugin.js',
   output: {
@@ -19,7 +23,7 @@ module.exports = {
         test: /\.js$/,
         exclude: /node_modules/,
         use: {
-          loader: 'babel-loader', // Optional if you're using Babel
+          loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env'],
           },
