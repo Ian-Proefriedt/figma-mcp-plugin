@@ -1,8 +1,8 @@
-import { traverseNodeTree } from '../core/recursive-node-traversal.js';
-import { isImageNode } from '../detection/style-detection.js';
-import { sanitizeClassName } from '../utils/classname-sanitizer.js';
-import { logNodeOutput } from '../utils/detection-log.js'; // ✅ Add this
-import { handleServerStart } from '../server/server-helper.js'; // Import the helper
+import { traverseNodeTree } from '../../core/recursive-node-traversal.js';
+import { isImageNode } from '../../detection/style-detection.js';
+import { sanitizeClassName } from '../../utils/classname-sanitizer.js';
+import { logNodeOutput } from '../../utils/detection-log.js';
+import { handleServerStart } from '../server/server-helper.js'; // KEEP THIS ONE AS IS
 
 export function handleSelection(node) {
   if (!node) {

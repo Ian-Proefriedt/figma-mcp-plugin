@@ -1,6 +1,13 @@
-import { handleSelection } from '../runtime/selection-handler.js';
+// Import necessary backend logic
+import { handleSelection } from './selection/selection-handler.js'; // For export flow
 import { traverseNodeTree } from '../core/recursive-node-traversal.js';
 import { logNodeOutput } from '../utils/detection-log.js';
+
+// Import server-related functions
+import { exportTreeToServer, exportImageToServer, triggerFontResolution } from './server/export-flow.js'; // Export logic
+
+// Import server helper function to start server
+import { handleServerStart as handleServerStartHelper } from './server/server-helper.js'; // Correct import from backend
 
 /**
  * Finds the top-level parent to use for sibling-aware traversal.
@@ -27,10 +34,13 @@ function findNodeById(tree, id) {
   return null;
 }
 
+/**
+ * Registers all plugin events and listens to messages from the UI.
+ */
 export function registerPluginEvents() {
   figma.showUI(__html__, { visible: true, width: 300, height: 200 });
 
-  // ✅ Enhanced: process full tree, send only selected node
+  // Listen for selection changes and send the processed node data to the UI
   figma.on('selectionchange', () => {
     const selected = figma.currentPage.selection[0];
     if (!selected) return;
@@ -44,6 +54,7 @@ export function registerPluginEvents() {
       return;
     }
 
+    // Log and send the selected node data to the UI
     logNodeOutput(selected, result);
 
     figma.ui.postMessage({
@@ -52,15 +63,36 @@ export function registerPluginEvents() {
     });
   });
 
-  // ✅ Export still triggers full tree export + assets
-  figma.ui.onmessage = msg => {
-    if (msg.type === 'start-export') {
+  // Handle messages from the UI
+  figma.ui.onmessage = (msg) => {
+    if (msg.type === 'start-server') {
+      // ➡️ Start the server when requested
+      handleServerStartHelper((err) => {
+        if (err) {
+          console.error('❌ Failed to start server:', err);
+          figma.notify('Failed to start server. See console.');
+        } else {
+          console.log('✅ Server is running.');
+          figma.notify('Server started successfully.');
+        }
+      });
+    }
+
+    else if (msg.type === 'start-export') {
       const node = figma.currentPage.selection[0];
       if (!node) {
         figma.notify("Please select a node first.");
         return;
       }
-      handleSelection(node);
+
+      // ➡️ Now just handle export logic (assumes server already running)
+      exportTreeToServer(msg.tree);
+      exportImageToServer(msg.image);
+      triggerFontResolution();
+
+      handleSelection(node); // Handles the node selection logic
     }
   };
+
+  // ✅ (No call to setupSelectionChangeHandler() anymore)
 }

@@ -165,21 +165,9 @@
     </button>
 
     <script type="module">
-      import { handleServerStart } from './server/server-helper.js';  // Ensure correct path to your helper file
+      import { handleServerStart } from './server/server-helper.js';  // ✅ Correct import, do NOT redefine it
     
-      // ====== Server Start Logic ======
-      function handleServerStart(callback) {
-        checkServer((err) => {
-          if (err) {
-            console.log('Server not running. Starting server...');
-            startServer(callback);
-          } else {
-            console.log('Server is already running');
-            callback(null);
-          }
-        });
-      }
-    
+      // ====== Export Start Logic ======
       function startExport() {
         handleServerStart((err) => {
           if (err) {
@@ -206,7 +194,10 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name: 'tree.json', contents: msg.tree })
             })
-            .then(res => { if (!res.ok) throw new Error('Tree save failed'); console.log('🌳 Streamed tree.json to server'); })
+            .then(res => {
+              if (!res.ok) throw new Error('Tree save failed');
+              console.log('🌳 Streamed tree.json to server');
+            })
             .catch(err => console.error('❌ Server tree.json export failed:', err));
           } else {
             const json = JSON.stringify(msg.tree, null, 2);
@@ -228,7 +219,10 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name: msg.name || 'image.png', bytes: msg.bytes })
             })
-            .then(res => { if (!res.ok) throw new Error('Failed to save via server'); console.log(`📡 Streamed image to server: ${msg.name}`); })
+            .then(res => {
+              if (!res.ok) throw new Error('Failed to save via server');
+              console.log(`📡 Streamed image to server: ${msg.name}`);
+            })
             .catch(err => console.error('❌ Server image export failed:', err));
           } else {
             const byteArray = new Uint8Array(msg.bytes);
@@ -245,12 +239,15 @@
         // ====== Font Resolution Handler ======
         if (msg?.type === 'trigger-font-resolution') {
           fetch('http://localhost:3001/resolve-fonts', { method: 'POST' })
-            .then(res => { if (!res.ok) throw new Error('Font resolution failed'); console.log('🧩 Fonts resolved.'); })
+            .then(res => {
+              if (!res.ok) throw new Error('Font resolution failed');
+              console.log('🧩 Fonts resolved.');
+            })
             .catch(err => console.error('❌ Font resolution error:', err));
         }
       };
     
-      // ====== Section Toggle Handler ====== 
+      // ====== Section Toggle Handler ======
       function setupSectionToggles() {
         document.querySelectorAll('.section-header').forEach(header => {
           header.addEventListener('click', () => {
@@ -259,7 +256,6 @@
         });
       }
     
-      // Run section toggle logic on load
       window.addEventListener('DOMContentLoaded', () => {
         setupSectionToggles();
       });
@@ -346,11 +342,12 @@
         }
       });
     
-      // ====== Export Button Logic ======
+      // ====== Export Button Handler ======
       const exportButton = document.querySelector('.export-button');
       if (exportButton) {
         exportButton.addEventListener('click', startExport);
       }
     </script>
+    
     </body>
     </html>

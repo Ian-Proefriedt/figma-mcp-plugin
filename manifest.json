@@ -3,7 +3,7 @@
   "id": "figma-to-code-plugin",
   "api": "1.0.0",
   "main": "dist/plugin.js",
-  "ui": "plugin/runtime/plugin-ui.html",
+  "ui": "dist/ui.html",
   "editorType": ["figma", "dev"],
   "capabilities": ["inspect"],
   "networkAccess": {

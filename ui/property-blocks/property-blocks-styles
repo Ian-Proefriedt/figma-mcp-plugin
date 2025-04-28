@@ -1,0 +1,17 @@
+.property-block {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .property-label {
+    color: var(--label-color);
+    font-weight: 500;
+  }
+  
+  .property-value {
+    color: var(--text-color);
+    text-align: right;
+    word-break: break-word;
+  }

@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // Ensure image directory exists
-const imageDir = path.resolve(__dirname, '../data/images'); // Adjust the path to be relative to the root directory
+const imageDir = path.resolve(__dirname, 'data/images'); // Adjust the path to be relative to the root directory
 if (!fs.existsSync(imageDir)) fs.mkdirSync(imageDir, { recursive: true });
 
 app.post('/save-image', (req, res) => {

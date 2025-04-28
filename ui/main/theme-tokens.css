@@ -1,0 +1,21 @@
+/* ====== Theme Tokens ====== */
+:root {
+    --bg-color: #1E1E1E;
+    --panel-color: #2C2C2C;
+    --border-color: #3C3C3C;
+    --text-color: #E5E5E5;
+    --label-color: #A5A5A5;
+    --accent-color: #4C8BFF;
+    --radius: 4px;
+    --padding: 12px;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-color);
+    font-family: sans-serif;
+    color: var(--text-color);
+    font-size: 13px;
+  }
+  

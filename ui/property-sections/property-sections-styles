@@ -1,0 +1,31 @@
+.section {
+    background: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    margin-bottom: var(--padding);
+  }
+  
+  .section-header {
+    padding: var(--padding);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--label-color);
+  }
+  
+  .section-content-wrapper {
+    padding: var(--padding);
+    display: none;
+  }
+  
+  .section.open .section-content-wrapper {
+    display: block;
+  }
+  
+  .properties-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+  }

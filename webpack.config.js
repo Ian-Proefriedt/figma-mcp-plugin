@@ -1,4 +1,4 @@
-// webpack.config.js (ESM version)
+// webpack.config.js (for backend)
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,15 +7,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default {
-  mode: 'development', // Use 'production' when you're ready to ship
+  mode: 'development', // or 'production'
+  target: 'webworker',  // <<< Important
   entry: './src/plugin.js',
   output: {
     filename: 'plugin.js',
     path: path.resolve(__dirname, 'dist'),
   },
-  devtool: false, // Prevents Webpack from using eval(), fixes __webpack_require__ error
+  devtool: false,
   resolve: {
     extensions: ['.js'],
+    fallback: {
+      fs: false,
+      path: false,
+      os: false,
+      http: false,
+      https: false,
+      child_process: false,
+    },
   },
   module: {
     rules: [
