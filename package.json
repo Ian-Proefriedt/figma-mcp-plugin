@@ -9,9 +9,10 @@
   },
   "scripts": {
     "start": "node server.js",
+    "mcp": "node mcp-server.js",
     "build": "webpack --config webpack.config.js --mode production && webpack --config webpack.ui.config.js --mode production",
     "watch": "webpack --config webpack.config.js --mode development --watch && webpack --config webpack.ui.config.js --mode development --watch",
-    "dev": "concurrently -n \"webpack,server\" -c \"yellow,cyan\" \"npm run watch\" \"node server.js\"",
+    "dev": "concurrently -n \"webpack,server\" -c \"yellow,cyan\" \"npm run watch\" \"npm run mcp\"",
     "build:ui": "webpack --config webpack.ui.config.js --mode production",
     "build:backend": "webpack --config webpack.config.js --mode production"
   },
@@ -25,7 +26,8 @@
     "inline-css-webpack-plugin-esm": "github:Ian-Proefriedt/inline-css-webpack-plugin-esm",
     "node-fetch": "^3.3.2",
     "npm-which": "^3.0.1",
-    "ttf2woff2": "^6.0.1"
+    "ttf2woff2": "^6.0.1",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "@babel/core": "^7.23.9",
