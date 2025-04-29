@@ -22,6 +22,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "fontkit": "^2.0.4",
+    "inline-css-webpack-plugin-esm": "github:Ian-Proefriedt/inline-css-webpack-plugin-esm",
     "node-fetch": "^3.3.2",
     "npm-which": "^3.0.1",
     "ttf2woff2": "^6.0.1"

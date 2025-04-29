@@ -1,12 +1,9 @@
-// /ui/index.js
-const css = document.createElement('link');
-css.rel = 'stylesheet';
-css.href = 'ui.css';
-document.head.appendChild(css);
-
 import { pluginHeaderUI } from './main/plugin-header-layout.js';
-import './main/plugin-container-styles.css';
 import './main/theme-tokens.css';
+import './main/plugin-container-styles.css';
+import './property-sections/property-sections-styles.css';
+import './property-blocks/property-blocks-styles.css';
+import './export-button/export-button-styles.css';
 import { propertiesUI } from './property-sections/property-sections-layout.js';
 import { exportButtonUI } from './export-button/export-button-layout.js';
 

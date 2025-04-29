@@ -2,7 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import HtmlInlineScriptPlugin from 'html-inline-script-webpack-plugin';
-import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import InlineCssWebpackPlugin from 'inline-css-webpack-plugin-esm';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,7 +13,7 @@ export default {
   output: {
     filename: 'ui.js',
     path: path.resolve(__dirname, 'dist'),
-    publicPath: '', // ✅ ensures relative path like "ui.css" works
+    publicPath: '',
   },
   devtool: 'source-map',
   resolve: {
@@ -31,7 +31,7 @@ export default {
       },
       {
         test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader'],
+        use: ['style-loader', 'css-loader'],
       },
     ],
   },
@@ -42,9 +42,6 @@ export default {
       inject: 'body',
     }),
     new HtmlInlineScriptPlugin({ scriptMatchPattern: [/ui\.js$/] }),
-    new MiniCssExtractPlugin({
-      filename: 'ui.css',        // ✅ exact name Figma will look for
-      linkType: 'text/css',      // ✅ ensures correct MIME
-    }),
+    new InlineCssWebpackPlugin(),
   ],
 };
