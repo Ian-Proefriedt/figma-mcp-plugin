@@ -5,4 +5,5 @@ export const pluginHeaderUI = `
     <div class="selection-title">
       Selected Node
     </div>
+  </div>
 `;

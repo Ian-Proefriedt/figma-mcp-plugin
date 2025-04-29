@@ -1,23 +1,31 @@
 // /ui/index.js
+const css = document.createElement('link');
+css.rel = 'stylesheet';
+css.href = 'ui.css';
+document.head.appendChild(css);
 
-// Import layout and UI components
 import { pluginHeaderUI } from './main/plugin-header-layout.js';
-import './main/plugin-container-styles.css';  // Global container styles
-import './main/theme-tokens.css';              // Global theme tokens
-import { propertiesUI } from './property-sections/property-sections-layout.js'; // Property sections layout
-import { exportButtonUI } from './export-button/export-button-layout.js';  // Export button layout
+import './main/plugin-container-styles.css';
+import './main/theme-tokens.css';
+import { propertiesUI } from './property-sections/property-sections-layout.js';
+import { exportButtonUI } from './export-button/export-button-layout.js';
 
-// Import frontend logic to handle incoming messages
-import { setupSelectionChangeHandler } from './selection/selection-change.js'; // Frontend UI listener
+import { setupSelectionChangeHandler } from './selection/selection-change.js';
 
-// Insert the HTML into the UI container
-document.getElementById('plugin-ui').innerHTML = `
-  ${pluginHeaderUI}
-  ${propertiesUI}
-  ${exportButtonUI}
-`;
+console.log("🔥 plugin-ui.bundle.js has loaded");
 
-// Setup frontend listeners (listen for selection changes, etc.)
-setupSelectionChangeHandler();
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('plugin-ui');
+  if (container) {
+    container.innerHTML = `
+      ${pluginHeaderUI}
+      ${propertiesUI}
+      ${exportButtonUI}
+    `;
+    console.log("✅ Real UI injected");
+  } else {
+    console.error("❌ #plugin-ui not found");
+  }
 
-// Additional UI logic can be added here if needed
+  setupSelectionChangeHandler(); // Listen for backend messages
+});
