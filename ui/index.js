@@ -5,6 +5,9 @@ import './property-sections/property-sections-styles.css';
 import './property-blocks/property-blocks-styles.css';
 import { propertiesUI } from './property-sections/property-sections-layout.js';
 
+import { exportButtonUI } from './export-button/export-button-layout.js';
+import { setupExportButtonHandler } from './export-button/export-button-logic.js';
+
 import { setupSelectionChangeHandler } from './selection/selection-change.js';
 
 console.log("🔥 plugin-ui.bundle.js has loaded");
@@ -15,22 +18,22 @@ document.addEventListener('DOMContentLoaded', () => {
     container.innerHTML = `
       ${pluginHeaderUI}
       ${propertiesUI}
+      ${exportButtonUI}
     `;
     console.log("✅ Real UI injected");
   } else {
     console.error("❌ #plugin-ui not found");
   }
 
-  setupSelectionChangeHandler(); // 🔁 This will hook into plugin messages
+  setupSelectionChangeHandler();    // 👁️ Handles selection-change message from plugin
+  setupExportButtonHandler();       // 🚀 Triggers 'trigger-manual-export' message to plugin
 });
 
-// 🔁 Required to receive data from plugin and forward it back (for server export)
+// ✅ Guarded listener: UI only responds to safe messages
 window.onmessage = (event) => {
   const msg = event.data.pluginMessage;
-  if (!msg) return;
+  if (!msg || msg.type !== 'selection-change') return;
 
-  console.log('📨 UI received plugin message:', msg);
-
-  // 🔁 Forward to plugin
-  parent.postMessage({ pluginMessage: msg }, '*');
+  console.log('📨 UI received selection-change:', msg);
+  // setupSelectionChangeHandler handles it
 };

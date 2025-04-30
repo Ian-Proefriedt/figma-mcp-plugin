@@ -10,7 +10,7 @@ export function registerPluginEvents() {
 
   let lastSelectedNodeId = null;
 
-  // ✅ Smart selection listener to avoid redundant triggers
+  // ✅ Smart selection listener to update the UI, not export
   figma.on('selectionchange', () => {
     const selected = figma.currentPage.selection[0];
 
@@ -20,20 +20,31 @@ export function registerPluginEvents() {
     }
 
     if (selected.id === lastSelectedNodeId) {
-      console.log('⚠️ Duplicate selection — skipping re-export:', selected.name);
+      console.log('⚠️ Duplicate selection — skipping UI update:', selected.name);
       return;
     }
 
     lastSelectedNodeId = selected.id;
     console.log('📌 New node selected:', selected.name);
-    handleSelection(selected);
+    
+    // Optional: send info to the UI (like selected node props)
+    // Not running export here
   });
 
-  // ✅ UI ↔ Plugin message bridge
+  // ✅ UI → Plugin message bridge
   figma.ui.onmessage = (msg) => {
     console.log('📬 Plugin received message from UI:', msg);
 
-    if (msg.type === 'export-tree-to-server') {
+    if (msg.type === 'trigger-manual-export') {
+      const node = figma.currentPage.selection[0];
+      if (node) {
+        handleSelection(node);
+      } else {
+        figma.notify('Please select a node before exporting.');
+      }
+    }
+
+    else if (msg.type === 'export-tree-to-server') {
       exportTreeToServer(msg.tree);
     }
 
@@ -43,13 +54,6 @@ export function registerPluginEvents() {
 
     else if (msg.type === 'trigger-font-resolution') {
       triggerFontResolution();
-    }
-
-    else if (msg.type === 'selection-change') {
-      const node = figma.currentPage.selection[0];
-      if (node) {
-        handleSelection(node); // Optional: manually re-trigger from UI
-      }
     }
   };
 }

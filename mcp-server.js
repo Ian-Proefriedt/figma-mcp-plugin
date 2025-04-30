@@ -3,16 +3,22 @@ import { WebSocketServer } from 'ws';
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
+import http from 'http';
 
 const app = express();
 const port = 3001;
-const wsPort = 3002;
 
-// Enable JSON parsing
 app.use(express.json({ limit: '50mb' }));
 
-// Set up WebSocket server for AI agent (Cursor) communication
-const wss = new WebSocketServer({ port: wsPort });
+// Create a shared HTTP + WS server on port 3001
+const server = http.createServer(app);
+server.listen(port, () => {
+  console.log(`🚀 MCP server running at http://localhost:${port}`);
+  console.log(`🔌 WebSocket also listening at ws://localhost:${port}`);
+});
+
+// Attach WebSocket to the same HTTP server
+const wss = new WebSocketServer({ server });
 let connectedClients = [];
 
 wss.on('connection', (ws) => {
@@ -24,11 +30,14 @@ wss.on('connection', (ws) => {
   });
 });
 
-// Broadcast message to all connected WebSocket clients
+// Broadcast message to Cursor (if connected)
 function notifyCursor(message) {
-  for (const client of connectedClients) {
-    client.send(JSON.stringify(message));
-  }
+  const json = JSON.stringify(message);
+  connectedClients.forEach(client => {
+    if (client.readyState === 1) {
+      client.send(json);
+    }
+  });
 }
 
 // Ensure /data/images directory exists
@@ -37,23 +46,24 @@ if (!fs.existsSync(imageDir)) fs.mkdirSync(imageDir, { recursive: true });
 
 // === Save Tree ===
 app.post('/save-tree', (req, res) => {
-    const { name, contents } = req.body;
-    if (!name || !contents) {
-      console.warn('❌ Missing name or contents in tree payload');
-      return res.status(400).send('Missing name or contents');
+  const { name, contents } = req.body;
+  if (!name || !contents) {
+    console.warn('❌ Missing name or contents in tree payload');
+    return res.status(400).send('Missing name or contents');
+  }
+
+  const filePath = path.resolve('data', name);
+  fs.writeFile(filePath, JSON.stringify(contents, null, 2), (err) => {
+    if (err) {
+      console.error(`❌ Failed to save ${name}:`, err);
+      return res.status(500).send('Tree write failed');
     }
-  
-    const filePath = path.resolve('data', name);
-    fs.writeFile(filePath, JSON.stringify(contents, null, 2), (err) => {
-      if (err) {
-        console.error(`❌ Failed to save ${name}:`, err);
-        return res.status(500).send('Tree write failed');
-      }
-      console.log(`🌳 Saved tree to ${filePath}`);
-      res.sendStatus(200);
-    });
+
+    console.log(`🌳 Saved tree to ${filePath}`);
+    notifyCursor({ type: 'tree-saved', path: filePath });
+    res.sendStatus(200);
   });
-  
+});
 
 // === Save Image ===
 app.post('/save-image', (req, res) => {
@@ -66,7 +76,9 @@ app.post('/save-image', (req, res) => {
       console.error(`❌ Failed to save image ${name}:`, err);
       return res.status(500).send('Image write failed');
     }
+
     console.log(`🖼️ Saved image: ${name}`);
+    notifyCursor({ type: 'image-saved', name, path: filePath });
     res.sendStatus(200);
   });
 });
@@ -79,13 +91,9 @@ app.post('/resolve-fonts', (req, res) => {
       console.error('❌ Font resolution failed:', err);
       return res.status(500).send('Font resolution error');
     }
+
     console.log('✅ Fonts resolved:\n', stdout);
+    notifyCursor({ type: 'fonts-resolved' });
     res.sendStatus(200);
   });
-});
-
-// Start HTTP server
-app.listen(port, () => {
-  console.log(`🚀 MCP HTTP server running at http://localhost:${port}`);
-  console.log(`🔌 MCP WebSocket server running at ws://localhost:${wsPort}`);
 });
