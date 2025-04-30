@@ -115,7 +115,7 @@ app.post('/resolve-fonts', (req, res) => {
   });
 });
 
-// ✅ Fixed: Final export-complete signal route (properly placed outside all others)
+// ✅ Final export-complete signal route
 app.post('/signal-export-complete', (req, res) => {
   const { exportId, trees, fonts, images } = req.body;
 
@@ -130,6 +130,24 @@ app.post('/signal-export-complete', (req, res) => {
     trees,
     fonts,
     images
+  });
+
+  res.sendStatus(200);
+});
+
+// 🤖 From AI (Cursor) to Plugin
+app.post('/from-ai', (req, res) => {
+  const { type, message, payload } = req.body;
+  if (!type || !message) {
+    return res.status(400).send('Missing type or message');
+  }
+
+  console.log(`🤖 Message from AI: [${type}]`, message);
+
+  broadcastToClients({
+    type: 'ai-message',
+    message,
+    payload
   });
 
   res.sendStatus(200);

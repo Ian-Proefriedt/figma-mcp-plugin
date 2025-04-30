@@ -1,6 +1,6 @@
-import { isImageNode } from '../../detection/style-detection.js';
-import { sanitizeClassName } from '../../utils/classname-sanitizer.js';
-import { traverseNodeTree } from '../../core/recursive-node-traversal.js';
+import { isImageNode } from '../detection/style-detection.js';
+import { sanitizeClassName } from '../utils/classname-sanitizer.js';
+import { traverseNodeTree } from '../core/recursive-node-traversal.js';
 
 export function handleSelection(node, { exportId, onlyExportImages = false } = {}) {
   // 1. Find the top root (for correct context)

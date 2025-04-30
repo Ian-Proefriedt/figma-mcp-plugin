@@ -1,4 +1,4 @@
-import { handleSelection } from './selection/selection-handler.js';
+import { handleSelection } from './selection-handler.js';
 import { traverseNodeTree } from '../core/recursive-node-traversal.js';
 import { logNodeOutput } from '../utils/detection-log.js';
 
@@ -53,24 +53,44 @@ export function registerPluginEvents() {
 
   figma.ui.onmessage = msg => {
     const node = figma.currentPage.selection[0];
-    if (!node) {
-      figma.notify("Please select a node first.");
-      return;
-    }
-  
-    const exportId = msg.exportId;
-    if (!exportId) {
-      console.warn('❗ Ignoring export message: missing exportId', msg);
-      return;
-    }
   
     if (msg.type === 'start-export') {
-      handleSelection(node, { exportId }); // ✅ INCLUDE exportId
+      if (!node) {
+        figma.notify("Please select a node first.");
+        return;
+      }
+      const exportId = msg.exportId;
+      if (!exportId) {
+        console.warn('❗ Ignoring export message: missing exportId', msg);
+        return;
+      }
+      handleSelection(node, { exportId });
     }
   
     else if (msg.type === 'begin-image-export') {
-      handleSelection(node, { onlyExportImages: true, exportId }); // ✅ INCLUDE exportId
-    }    
+      if (!node) {
+        figma.notify("Please select a node first.");
+        return;
+      }
+      const exportId = msg.exportId;
+      if (!exportId) {
+        console.warn('❗ Ignoring export message: missing exportId', msg);
+        return;
+      }
+      handleSelection(node, { onlyExportImages: true, exportId });
+    }
+  
+    // ✅ NEW: AI-to-Plugin Message
+    else if (msg.type === 'ai-message') {
+      figma.notify(`🤖 AI: ${msg.message}`, { timeout: 5000 });
+  
+      figma.ui.postMessage({
+        type: 'show-ai-feedback',
+        message: msg.message,
+        payload: msg.payload
+      });
+    }
+      
 
     // ✳️ Future: Allow UI → plugin messages to be relayed to server via fetch
     // Example:

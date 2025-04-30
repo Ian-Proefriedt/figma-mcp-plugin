@@ -1,13 +1,15 @@
 <!-- ai/prompt-template.md -->
 
-You are reviewing node trees exported from a Figma plugin.
+You are helping a UX designer understand the results of a Figma-to-code export.
 
-Each *_tree.json file represents a single user-selected parent node and all its descendants.
+A new export just completed. Below is a listing of the current contents of the `data/` directory, including all subfolders and files:
 
-Important:
-- These are fully recursive trees
-- Siblings of the selected node are not included
-- Multiple trees may indicate multiple screens, sections, or components
+{{fileTree}}
 
-Before proceeding with any interpretation, ask the user:
-**“How would you like me to organize these node trees?”**
+Write a clear, natural-language summary that includes:
+- What types of files were found (e.g., JSON trees, images, fonts)
+- What each file likely represents based on its name and folder
+- Any patterns or structure you notice (e.g., multiple exports, organized folders)
+- Any helpful next steps or insights the designer might care about
+
+Respond in 2–4 concise paragraphs using plain, friendly language. Be thoughtful, but only base conclusions on what you can observe from the filenames and structure.
