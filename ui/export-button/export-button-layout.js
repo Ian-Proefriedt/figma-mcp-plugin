@@ -1,8 +1,5 @@
-// /ui/layout/export-button.js
-
 export const exportButtonUI = `
-  <!-- ====== Export Button ====== -->
-  <button class="export-button" onclick="startExport()">
-    Export Tree + Images + Fonts
+  <button id="export-to-server" class="export-button">
+    Export to Server
   </button>
 `;

@@ -1,5 +1,5 @@
 // server.js (ESM version)
-// A simple local image receiver that listens for streamed image data
+// Local export server with WebSocket support for smarter feedback
 
 import express from 'express';
 import fs from 'fs';
@@ -7,6 +7,8 @@ import path from 'path';
 import cors from 'cors';
 import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
+import http from 'http';
+import { WebSocketServer } from 'ws';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,8 +19,37 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// Wrap express in a server so WebSocket can share it
+const server = http.createServer(app);
+server.listen(PORT, () => {
+  console.log(`🧠 Express + WebSocket server running at http://localhost:${PORT}`);
+});
+
+// === WebSocket Server ===
+const wss = new WebSocketServer({ server });
+let connectedClients = [];
+
+wss.on('connection', (ws) => {
+  console.log('🔌 WebSocket client connected');
+  connectedClients.push(ws);
+
+  ws.on('close', () => {
+    connectedClients = connectedClients.filter(c => c !== ws);
+    console.log('❌ WebSocket client disconnected');
+  });
+});
+
+function broadcastToClients(message) {
+  const data = JSON.stringify(message);
+  connectedClients.forEach(client => {
+    if (client.readyState === client.OPEN) {
+      client.send(data);
+    }
+  });
+}
+
 // Ensure image directory exists
-const imageDir = path.resolve(__dirname, 'data/images'); // Adjust the path to be relative to the root directory
+const imageDir = path.resolve(__dirname, 'data/images');
 if (!fs.existsSync(imageDir)) fs.mkdirSync(imageDir, { recursive: true });
 
 app.post('/save-image', (req, res) => {
@@ -34,6 +65,7 @@ app.post('/save-image', (req, res) => {
       return res.status(500).send('Write failed');
     }
     console.log(`✅ Saved ${filePath}`);
+    broadcastToClients({ type: 'image-saved', name });
     res.sendStatus(200);
   });
 });
@@ -54,6 +86,7 @@ app.post('/save-tree', (req, res) => {
       return res.status(500).send('Write failed');
     }
     console.log(`🌳 Saved tree to ${filePath}`);
+    broadcastToClients({ type: 'tree-saved', name });
     res.sendStatus(200);
   });
 });
@@ -66,17 +99,7 @@ app.post('/resolve-fonts', (req, res) => {
       return res.status(500).send('Font resolution failed');
     }
     console.log('🔠 Font resolution output:\n', stdout);
+    broadcastToClients({ type: 'fonts-resolved', details: stdout });
     res.sendStatus(200);
   });
-});
-
-// Simple ping route to confirm server is alive
-app.get('/ping', (req, res) => {
-  res.send('pong');
-});
-
-app.listen(PORT, () => {
-  console.log('🧭 __dirname:', __dirname);
-  console.log('📂 process.cwd():', process.cwd());
-  console.log(`🖼 Data Transfer Automation Active at http://localhost:${PORT}`);
 });

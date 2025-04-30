@@ -1,5 +1,5 @@
 // scripts/generate-fonts.js (ESM)
-// Reads tree.json and outputs a list of unique fonts to fonts-needed.json
+// Reads latest *_tree.json and outputs a list of unique fonts to fonts-needed.json
 
 import fs from 'fs';
 import path from 'path';
@@ -8,8 +8,25 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TREE_PATH = path.resolve(__dirname, '../data/tree.json');
-const OUTPUT_PATH = path.resolve(__dirname, '../data/fonts-needed.json');
+const DATA_DIR = path.resolve(__dirname, '../data');
+const OUTPUT_PATH = path.resolve(DATA_DIR, 'fonts-needed.json');
+
+function getLatestTreeFile() {
+  const files = fs.readdirSync(DATA_DIR)
+    .filter(name => name.endsWith('_tree.json'))
+    .map(name => ({
+      name,
+      time: fs.statSync(path.join(DATA_DIR, name)).mtime
+    }))
+    .sort((a, b) => b.time - a.time);
+
+  if (files.length === 0) {
+    console.error('❌ No *_tree.json file found in /data');
+    process.exit(1);
+  }
+
+  return path.join(DATA_DIR, files[0].name);
+}
 
 function collectFontsFromTree(node, fonts = new Set()) {
   if (!node) return fonts;
@@ -27,12 +44,10 @@ function collectFontsFromTree(node, fonts = new Set()) {
 }
 
 function main() {
-  if (!fs.existsSync(TREE_PATH)) {
-    console.error('❌ tree.json not found at', TREE_PATH);
-    return;
-  }
+  const latestTreePath = getLatestTreeFile();
+  console.log(`🌳 Using tree file: ${latestTreePath}`);
 
-  const tree = JSON.parse(fs.readFileSync(TREE_PATH, 'utf-8'));
+  const tree = JSON.parse(fs.readFileSync(latestTreePath, 'utf-8'));
   const fontSet = collectFontsFromTree(tree);
 
   const fontList = Array.from(fontSet).map(pair => {
