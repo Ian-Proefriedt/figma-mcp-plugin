@@ -33,6 +33,17 @@ wss.on('connection', (ws) => {
   console.log('🔌 WebSocket client connected');
   connectedClients.push(ws);
 
+  ws.on('message', (message) => {
+    console.log('📨 Incoming WebSocket message from client:', message.toString());
+
+    try {
+      const parsed = JSON.parse(message);
+      broadcastToClients(parsed);
+    } catch (err) {
+      console.warn('⚠️ Failed to parse incoming WebSocket message:', err);
+    }
+  });
+
   ws.on('close', () => {
     connectedClients = connectedClients.filter(c => c !== ws);
     console.log('❌ WebSocket client disconnected');
@@ -102,4 +113,24 @@ app.post('/resolve-fonts', (req, res) => {
     broadcastToClients({ type: 'fonts-resolved', details: stdout });
     res.sendStatus(200);
   });
+});
+
+// ✅ Fixed: Final export-complete signal route (properly placed outside all others)
+app.post('/signal-export-complete', (req, res) => {
+  const { exportId, trees, fonts, images } = req.body;
+
+  console.log(`✅ Export complete [exportId=${exportId}]`);
+  console.log(`🧾 Tree files: ${trees?.length || 0}`);
+  console.log(`🧾 Fonts: ${fonts?.length || 0}`);
+  console.log(`🧾 Images: ${images?.length || 0}`);
+
+  broadcastToClients({
+    type: 'export-complete',
+    exportId,
+    trees,
+    fonts,
+    images
+  });
+
+  res.sendStatus(200);
 });

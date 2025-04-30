@@ -30,7 +30,6 @@ function findNodeById(tree, id) {
 export function registerPluginEvents() {
   figma.showUI(__html__, { visible: true, width: 300, height: 200 });
 
-  // ✅ Enhanced: process full tree, send only selected node
   figma.on('selectionchange', () => {
     const selected = figma.currentPage.selection[0];
     if (!selected) return;
@@ -52,15 +51,35 @@ export function registerPluginEvents() {
     });
   });
 
-  // ✅ Export still triggers full tree export + assets
   figma.ui.onmessage = msg => {
-    if (msg.type === 'start-export') {
-      const node = figma.currentPage.selection[0];
-      if (!node) {
-        figma.notify("Please select a node first.");
-        return;
-      }
-      handleSelection(node);
+    const node = figma.currentPage.selection[0];
+    if (!node) {
+      figma.notify("Please select a node first.");
+      return;
     }
+  
+    const exportId = msg.exportId;
+    if (!exportId) {
+      console.warn('❗ Ignoring export message: missing exportId', msg);
+      return;
+    }
+  
+    if (msg.type === 'start-export') {
+      handleSelection(node, { exportId }); // ✅ INCLUDE exportId
+    }
+  
+    else if (msg.type === 'begin-image-export') {
+      handleSelection(node, { onlyExportImages: true, exportId }); // ✅ INCLUDE exportId
+    }    
+
+    // ✳️ Future: Allow UI → plugin messages to be relayed to server via fetch
+    // Example:
+    // if (msg.type === 'send-to-ai') {
+    //   fetch('http://localhost:3001/send-to-ai', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(msg.payload)
+    //   });
+    // }
   };
 }

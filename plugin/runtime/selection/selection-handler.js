@@ -1,67 +1,95 @@
-import { traverseNodeTree } from '../../core/recursive-node-traversal.js';
 import { isImageNode } from '../../detection/style-detection.js';
 import { sanitizeClassName } from '../../utils/classname-sanitizer.js';
-import { logNodeOutput } from '../../utils/detection-log.js'; // ✅ Add this
+import { traverseNodeTree } from '../../core/recursive-node-traversal.js';
 
-export function handleSelection(node) {
-  if (!node) {
-    console.warn("No node selected.");
-    return null;
+export function handleSelection(node, { exportId, onlyExportImages = false } = {}) {
+  // 1. Find the top root (for correct context)
+  const root = getTraversalRoot(node);
+  const fullTree = traverseNodeTree(root);
+
+  // 2. Locate the originally selected node inside it
+  const tree = findNodeById(fullTree, node.id);
+  if (!tree) {
+    console.warn("❌ Selected node not found in processed tree.");
+    return;
   }
 
-  const tree = traverseNodeTree(node);
+  // 3. Filename
+  const safeName = (node.name || 'unnamed')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-_]/g, '');
+  const filename = `${safeName}_tree.json`;
 
-  // ✅ Add your exact recursive logging here
-  logNodeOutput(node, tree);
+  // 4. Tree + Font
+  if (!onlyExportImages) {
+    figma.ui.postMessage({
+      type: 'export-tree-to-server',
+      exportId,
+      tree: {
+        name: filename,
+        contents: tree
+      }
+    });
 
-  const rawName = node.name || "unnamed";
-  const safeName = rawName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-_]/g, '');
-  const fileName = `${safeName}_tree.json`;
+    figma.ui.postMessage({
+      type: 'trigger-font-resolution',
+      exportId
+    });
+  }
 
-  figma.ui.postMessage({
-    type: 'export-tree-to-server',
-    tree: {
-      name: fileName,
-      contents: tree
-    }
-  });
-
-  figma.ui.postMessage({
-    type: 'selection-change',
-    data: tree
-  });
-
-  figma.ui.postMessage({
-    type: 'trigger-font-resolution'
-  });
-
+  // 5. Images
   const imagePromises = [];
 
   function collectImageNodes(node) {
     if (isImageNode(node) && node.fills) {
       const imageFill = node.fills.find(f => f.type === 'IMAGE');
-      if (imageFill && imageFill.imageHash) {
+      if (imageFill?.imageHash) {
         const promise = figma.getImageByHash(imageFill.imageHash).getBytesAsync()
           .then(bytes => {
             figma.ui.postMessage({
               type: 'export-image',
+              exportId,
               bytes: Array.from(bytes),
               name: sanitizeClassName(node.name || 'image') + '.png'
             });
           })
           .catch(err => {
-            console.warn('⚠️ Failed to extract image for', node.name, err);
+            console.warn(`⚠️ Failed to extract image: ${node.name}`, err);
           });
         imagePromises.push(promise);
       }
     }
+
     if ('children' in node && Array.isArray(node.children)) {
       node.children.forEach(collectImageNodes);
     }
   }
 
-  collectImageNodes(node);
+  collectImageNodes(tree);
+
   Promise.all(imagePromises).then(() => {
-    console.log('📦 All image exports complete');
+    console.log(`📦 Image export complete [exportId=${exportId}]`);
   });
+}
+
+// utility
+function getTraversalRoot(node) {
+  let current = node;
+  while (current.parent && current.parent.type !== 'PAGE') {
+    current = current.parent;
+  }
+  return current;
+}
+
+function findNodeById(tree, id) {
+  if (tree.id === id) return tree;
+  if (tree.children) {
+    for (const child of tree.children) {
+      const found = findNodeById(child, id);
+      if (found) return found;
+    }
+  }
+  return null;
 }
