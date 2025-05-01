@@ -77,10 +77,12 @@ export function handleSelection(node, { exportId, onlyExportImages = false } = {
   });
 
   Promise.all(imagePromises).then(() => {
-    console.log(`📦 Image export complete [exportId=${exportId}]`);
     figma.ui.postMessage({
-      type: 'signal-export-ready',
-      exportId
-    });
+      type: 'image-export-count',
+      exportId,
+      count: imageCount
+    });    
+    
   });
+  
 }

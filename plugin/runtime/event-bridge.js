@@ -45,10 +45,22 @@ export function registerPluginEvents() {
 
     logNodeOutput(selected, result);
 
-    figma.ui.postMessage({
-      type: 'selection-change',
-      data: result
-    });
+    try {
+      const safeResult = JSON.parse(JSON.stringify(result, (key, value) => {
+        // Strip imageRef from style.image
+        if (key === 'imageRef') return null;
+        return value;
+      }));
+    
+      figma.ui.postMessage({
+        type: 'selection-change',
+        data: safeResult
+      });
+    
+    } catch (err) {
+      console.error('❌ Failed to post message due to unsafe data:', err);
+    }
+    
   });
 
   figma.ui.onmessage = msg => {

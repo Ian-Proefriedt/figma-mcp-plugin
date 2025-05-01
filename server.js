@@ -35,7 +35,6 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (message) => {
     console.log('📨 Incoming WebSocket message from client:', message.toString());
-
     try {
       const parsed = JSON.parse(message);
       broadcastToClients(parsed);
@@ -109,9 +108,23 @@ app.post('/resolve-fonts', (req, res) => {
       console.error('❌ Font resolution failed:', err);
       return res.status(500).send('Font resolution failed');
     }
+
     console.log('🔠 Font resolution output:\n', stdout);
     broadcastToClients({ type: 'fonts-resolved', details: stdout });
-    res.sendStatus(200);
+
+    // ✅ Read fonts-needed.json and return font list
+    const fontsJsonPath = path.resolve(__dirname, 'data/fonts-needed.json');
+    let fontList = [];
+
+    try {
+      const raw = fs.readFileSync(fontsJsonPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      fontList = parsed.map(f => `${f.family} – ${f.style}`);
+    } catch (err) {
+      console.warn('⚠️ Could not read fonts-needed.json:', err);
+    }
+
+    res.status(200).json({ fonts: fontList });
   });
 });
 

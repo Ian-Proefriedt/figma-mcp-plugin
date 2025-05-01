@@ -1,6 +1,7 @@
 export function setupExportHandlers() {
   const handledExportIds = new Set();
-  const exportStates = new Map(); // exportId → { tree, fonts, images: Set, completionSent }
+  const exportStates = new Map();
+  const VERBOSE = false;
 
   function generateExportId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -8,17 +9,24 @@ export function setupExportHandlers() {
 
   function checkExportCompletion(exportId) {
     const state = exportStates.get(exportId);
-    if (!state || !state.tree || !state.fonts || !state.images || state.completionSent) return;
+    if (VERBOSE) {
+      console.log('[✅ checkExportCompletion()]');
+      console.log('   exportId:', exportId);
+      console.log('   state:', state);
+    }
 
-    // Mark completion as sent
+    if (!state) return;
+    if (!state.tree || !state.fonts || !state.imageExportComplete || state.completionSent) return;
+
     state.completionSent = true;
 
     const summary = {
       exportId,
       trees: ['(1 tree - see server for full details)'],
-      fonts: [], // optional, can be added later
+      fonts: state.fonts || [],
       images: Array.from(state.images)
     };
+    
 
     setTimeout(() => {
       fetch('http://localhost:3001/signal-export-complete', {
@@ -26,9 +34,7 @@ export function setupExportHandlers() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(summary)
       }).then(() => {
-        console.log(`🚀 Signal sent: export complete for exportId=${exportId}`);
-        
-        // Re-enable the export button after completion
+        console.log(`🚀 Export complete [exportId=${exportId}]`);
         const exportButton = document.querySelector('.export-button');
         if (exportButton) exportButton.disabled = false;
       });
@@ -40,10 +46,10 @@ export function setupExportHandlers() {
     exportButton.dataset.bound = 'true';
     exportButton.addEventListener('click', () => {
       if (exportButton.disabled) return;
-      exportButton.disabled = true; // optional: debounce safeguard
+      exportButton.disabled = true;
 
       const exportId = generateExportId();
-      console.log('🚀 Export button clicked → starting export with exportId:', exportId);
+      console.log(`🚀 Export started [exportId=${exportId}]`);
 
       parent.postMessage({ pluginMessage: { type: 'start-export', exportId } }, '*');
     });
@@ -53,31 +59,35 @@ export function setupExportHandlers() {
     const msg = event.data.pluginMessage;
     if (!msg) return;
 
+    const exportId = msg.exportId;
     const requiresExportId = ['export-tree-to-server', 'trigger-font-resolution', 'export-image'];
-    if (requiresExportId.includes(msg.type) && !msg.exportId) {
-      console.warn('❗ Ignoring plugin export message: missing exportId', msg);
+
+    if (requiresExportId.includes(msg.type) && !exportId) {
+      console.warn('❗ Ignoring export message without exportId:', msg);
       return;
     }
-
-    const exportId = msg.exportId;
 
     if (exportId && !exportStates.has(exportId)) {
       exportStates.set(exportId, {
         tree: false,
         fonts: false,
         images: new Set(),
-        completionSent: false // Prevent sending multiple completions
+        imageExportComplete: false,
+        completionSent: false,
+        expectedImages: 0,
+        savedImages: 0
       });
     }
 
-    const state = exportId ? exportStates.get(exportId) : null;
+    const state = exportStates.get(exportId);
+    if (!state) return;
 
-    if (msg.type === 'export-tree-to-server') {
-      if (handledExportIds.has(exportId)) {
-        console.warn(`⚠️ Skipping duplicate export run for exportId=${exportId}`);
-        return;
-      }
-
+    if (msg.type === 'image-export-count') {
+      state.expectedImages = msg.count;
+      state.savedImages = 0;
+    }
+    else if (msg.type === 'export-tree-to-server') {
+      if (handledExportIds.has(exportId)) return;
       handledExportIds.add(exportId);
 
       fetch('http://localhost:3001/save-tree', {
@@ -87,7 +97,7 @@ export function setupExportHandlers() {
       })
         .then(res => res.ok ? res.text() : Promise.reject('Tree save failed'))
         .then(response => {
-          console.log(`🌳 Tree streamed to server [exportId=${exportId}]`, response);
+          console.log(`🌳 Tree saved [${exportId}]`);
           state.tree = true;
 
           return fetch('http://localhost:3001/resolve-fonts', {
@@ -96,10 +106,13 @@ export function setupExportHandlers() {
             body: JSON.stringify({ exportId })
           });
         })
-        .then(res => res.ok ? res.text() : Promise.reject('Font resolution failed'))
+        .then(res => res.ok ? res.json() : Promise.reject('Font resolution failed'))
         .then(response => {
-          console.log(`🧩 Fonts resolved [exportId=${exportId}]`, response);
-          state.fonts = true;
+          state.fonts = response.fonts || [];
+          state.fonts.forEach(font => {
+            console.log(`🔤 Font saved: ${font} [${exportId}]`);
+          });
+          console.log(`📦 Font export complete [${exportId}]`);
 
           parent.postMessage({
             pluginMessage: {
@@ -112,7 +125,6 @@ export function setupExportHandlers() {
           console.error('❌ Export failed:', err);
         });
     }
-
     else if (msg.type === 'export-image') {
       fetch('http://localhost:3001/save-image', {
         method: 'POST',
@@ -125,18 +137,20 @@ export function setupExportHandlers() {
       })
         .then(res => res.ok ? res.text() : Promise.reject('Image save failed'))
         .then(response => {
-          console.log(`🖼️ Image streamed to server: ${msg.name} [exportId=${exportId}]`, response);
+          console.log(`🖼️ Image saved: ${msg.name} [${exportId}]`);
           state.images.add(msg.name);
-          checkExportCompletion(exportId); // Check if all exports are completed
+          state.savedImages += 1;
+
+          if (state.savedImages === state.expectedImages) {
+            console.log(`📦 Image export complete [${exportId}]`);
+            state.imageExportComplete = true;
+          }
+
+          checkExportCompletion(exportId);
         })
         .catch(err => {
           console.error(`❌ Image export failed (${msg.name}):`, err);
         });
-    }
-
-    // 🟢 Phase 4: Image Export Completion
-    else if (msg.type === 'image-export-complete') {
-      checkExportCompletion(exportId); // Final check to signal completion
     }
   });
 }

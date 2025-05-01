@@ -29,9 +29,12 @@ export function getTextSpacing(node) {
 }
 
 export function getTextCaseAndDecoration(node) {
+  const rawCase = node?.textCase;
+  const rawDecoration = node?.textDecoration;
+
   return {
-    textCase: (node && node.textCase && node.textCase.toLowerCase()) || 'original',
-    textDecoration: (node && node.textDecoration && node.textDecoration.toLowerCase()) || 'none'
+    textCase: typeof rawCase === 'string' ? rawCase.toLowerCase() : 'original',
+    textDecoration: typeof rawDecoration === 'string' ? rawDecoration.toLowerCase() : 'none'
   };
 }
 

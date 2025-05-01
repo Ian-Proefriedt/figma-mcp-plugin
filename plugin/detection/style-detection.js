@@ -17,7 +17,7 @@ export function getFillAndImage(node) {
       image = {
         type: 'image',
         imageRef: f.imageHash || null,
-        scaleMode: (f && f.scaleMode && f.scaleMode.toLowerCase()) || 'undefined',
+        scaleMode: typeof f.scaleMode === 'string' ? f.scaleMode.toLowerCase() : 'undefined',
         styleId: (node && node.fillStyleId) || null
       };
     } else if (!fill && (f.type === 'SOLID' || (f && f.type && f.type.endsWith('_GRADIENT')))) {
