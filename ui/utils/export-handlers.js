@@ -1,14 +1,17 @@
 export function setupExportHandlers() {
   const handledExportIds = new Set();
-  const exportStates = new Map(); // exportId → { tree, fonts, images: Set }
-  
+  const exportStates = new Map(); // exportId → { tree, fonts, images: Set, completionSent }
+
   function generateExportId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
   function checkExportCompletion(exportId) {
     const state = exportStates.get(exportId);
-    if (!state || !state.tree || !state.fonts) return;
+    if (!state || !state.tree || !state.fonts || !state.images || state.completionSent) return;
+
+    // Mark completion as sent
+    state.completionSent = true;
 
     const summary = {
       exportId,
@@ -25,18 +28,16 @@ export function setupExportHandlers() {
       }).then(() => {
         console.log(`🚀 Signal sent: export complete for exportId=${exportId}`);
         
-        // ✅ Re-enable the export button after completion
+        // Re-enable the export button after completion
         const exportButton = document.querySelector('.export-button');
         if (exportButton) exportButton.disabled = false;
       });
     }, 300);
-    
   }
 
-  // Setup export button handler
   const exportButton = document.querySelector('.export-button');
   if (exportButton && !exportButton.dataset.bound) {
-    exportButton.dataset.bound = 'true'; // 🧠 prevents re-binding on reload
+    exportButton.dataset.bound = 'true';
     exportButton.addEventListener('click', () => {
       if (exportButton.disabled) return;
       exportButton.disabled = true; // optional: debounce safeguard
@@ -48,12 +49,10 @@ export function setupExportHandlers() {
     });
   }
 
-  // Setup message handler
   window.addEventListener('message', (event) => {
     const msg = event.data.pluginMessage;
     if (!msg) return;
 
-    // 🧠 Only log missing exportId for true export messages
     const requiresExportId = ['export-tree-to-server', 'trigger-font-resolution', 'export-image'];
     if (requiresExportId.includes(msg.type) && !msg.exportId) {
       console.warn('❗ Ignoring plugin export message: missing exportId', msg);
@@ -62,12 +61,12 @@ export function setupExportHandlers() {
 
     const exportId = msg.exportId;
 
-    // Ensure state is initialized for this export
     if (exportId && !exportStates.has(exportId)) {
       exportStates.set(exportId, {
         tree: false,
         fonts: false,
-        images: new Set()
+        images: new Set(),
+        completionSent: false // Prevent sending multiple completions
       });
     }
 
@@ -102,22 +101,18 @@ export function setupExportHandlers() {
           console.log(`🧩 Fonts resolved [exportId=${exportId}]`, response);
           state.fonts = true;
 
-          parent.postMessage(
-            {
-              pluginMessage: {
-                type: 'begin-image-export',
-                exportId
-              }
-            },
-            '*'
-          );
-
-          checkExportCompletion(exportId);
+          parent.postMessage({
+            pluginMessage: {
+              type: 'begin-image-export',
+              exportId
+            }
+          }, '*');
         })
         .catch(err => {
           console.error('❌ Export failed:', err);
         });
     }
+
     else if (msg.type === 'export-image') {
       fetch('http://localhost:3001/save-image', {
         method: 'POST',
@@ -132,12 +127,16 @@ export function setupExportHandlers() {
         .then(response => {
           console.log(`🖼️ Image streamed to server: ${msg.name} [exportId=${exportId}]`, response);
           state.images.add(msg.name);
-          checkExportCompletion(exportId);
+          checkExportCompletion(exportId); // Check if all exports are completed
         })
         .catch(err => {
           console.error(`❌ Image export failed (${msg.name}):`, err);
         });
     }
+
+    // 🟢 Phase 4: Image Export Completion
+    else if (msg.type === 'image-export-complete') {
+      checkExportCompletion(exportId); // Final check to signal completion
+    }
   });
 }
-
