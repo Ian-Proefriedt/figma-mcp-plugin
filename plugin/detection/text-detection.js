@@ -33,8 +33,8 @@ export function getTextCaseAndDecoration(node) {
   const rawDecoration = node?.textDecoration;
 
   return {
-    textCase: typeof rawCase === 'string' ? rawCase.toLowerCase() : 'original',
-    textDecoration: typeof rawDecoration === 'string' ? rawDecoration.toLowerCase() : 'none'
+    textCase: typeof rawCase === 'string' ? rawCase.toLowerCase() : null,
+    textDecoration: typeof rawDecoration === 'string' ? rawDecoration.toLowerCase() : null
   };
 }
 

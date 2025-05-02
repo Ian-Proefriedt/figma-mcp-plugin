@@ -17,14 +17,14 @@ export function getFillAndImage(node) {
       image = {
         type: 'image',
         imageRef: f.imageHash || null,
-        scaleMode: typeof f.scaleMode === 'string' ? f.scaleMode.toLowerCase() : 'undefined',
+        scaleMode: typeof f.scaleMode === 'string' ? f.scaleMode.toLowerCase() : null,
         styleId: (node && node.fillStyleId) || null
       };
     } else if (!fill && (f.type === 'SOLID' || (f && f.type && f.type.endsWith('_GRADIENT')))) {
       fill = {
         type: interpretFillType(f.type),
         color: f.color ? rgbToHex(f.color) : null,
-        opacity: f.opacity || 1,
+        opacity: f.opacity || null,
         styleId: (node && node.fillStyleId) || null
       };
     }
@@ -36,14 +36,14 @@ export function getStroke(node) {
   const stroke = (node && node.strokes && node.strokes[0]) || null;
   return {
     color: (stroke && stroke.color) || null,
-    opacity: (stroke && stroke.opacity) || 1,
-    weight: (node && node.strokeWeight) || 1,
+    opacity: (stroke && stroke.opacity) || null,
+    weight: (node && node.strokeWeight) || null,
     styleId: (node && node.strokeStyleId) || null
   };
 }
 
 export function getCornerRadius(node) {
-  return (node && node.cornerRadius) || 0;
+  return (node && node.cornerRadius) || null;
 }
 
 export function getBlendMode(node) {
@@ -52,5 +52,6 @@ export function getBlendMode(node) {
 
 export function getShadowPresence(node) {
   const effects = (node && node.effects) || [];
-  return effects.some(effect => effect.type === 'DROP_SHADOW');
+  return effects.some(effect => effect.type === 'DROP_SHADOW') ? true : null;
 }
+

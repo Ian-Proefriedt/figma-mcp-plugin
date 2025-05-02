@@ -42,7 +42,7 @@ export function getSizingModes(node) {
 }
 
 export function getRotation(node) {
-  return (node && node.rotation) || 0;
+  return (node && node.rotation) || null;
 }
 
 export function getConstraints(node) {
@@ -60,7 +60,7 @@ export function getPositioning(node) {
 }
 
 export function getClipping(node) {
-  return (node && node.clipsContent) || false;
+  return (node && node.clipsContent) || null;
 }
 
 export function getZIndex(node) {

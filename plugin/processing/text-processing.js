@@ -10,6 +10,7 @@ import { interpretFontWeight } from '../interpretation/text-interpretation.js';
 import { getStyleNameById } from '../utils/style-name-resolver.js';
 
 export function processTextUI(node) {
+  if (!node || node.type !== 'TEXT') return null; // ✅ early exit for non-text nodes
   const styleName = getStyleNameById(node && node.textStyleId, 'text');
   const styleDef = node && node.textStyleId
     ? figma.getLocalTextStyles().find(s => s.id === node.textStyleId)

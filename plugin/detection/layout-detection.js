@@ -20,12 +20,15 @@ export function getItemSpacing(node) {
 }
 
 export function getPadding(node) {
-  return {
-    top: (node && node.paddingTop) || 0,
-    right: (node && node.paddingRight) || 0,
-    bottom: (node && node.paddingBottom) || 0,
-    left: (node && node.paddingLeft) || 0
+  const padding = {
+    top: node.paddingTop || 0,
+    right: node.paddingRight || 0,
+    bottom: node.paddingBottom || 0,
+    left: node.paddingLeft || 0
   };
+
+  const allZero = Object.values(padding).every(val => val === 0);
+  return allZero ? "none" : padding;
 }
 
 export function getLayoutWrap(node) {

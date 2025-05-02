@@ -26,7 +26,6 @@ export function setupExportHandlers() {
       fonts: state.fonts || [],
       images: Array.from(state.images)
     };
-    
 
     setTimeout(() => {
       fetch('http://localhost:3001/signal-export-complete', {
@@ -82,10 +81,22 @@ export function setupExportHandlers() {
     const state = exportStates.get(exportId);
     if (!state) return;
 
-    if (msg.type === 'image-export-count') {
+    // ✅ Log symbol stripping BEFORE saving the tree
+    else if (msg.type === 'sanitize-warnings') {
+      if (Array.isArray(msg.warnings) && msg.warnings.length > 0) {
+        console.log(
+          `%c⚠️ [${msg.warnings.length}] Unsafe Symbols Stripped:`,
+          'color: #fdf3ad; background:#413c27; padding: 2px 8px; border-radius: 4px; font-weight: bold;',
+          { paths: msg.warnings }
+        );               
+      }
+    }   
+
+    else if (msg.type === 'image-export-count') {
       state.expectedImages = msg.count;
       state.savedImages = 0;
     }
+
     else if (msg.type === 'export-tree-to-server') {
       if (handledExportIds.has(exportId)) return;
       handledExportIds.add(exportId);
@@ -113,18 +124,27 @@ export function setupExportHandlers() {
             console.log(`🔤 Font saved: ${font} [${exportId}]`);
           });
           console.log(`📦 Font export complete [${exportId}]`);
-
-          parent.postMessage({
-            pluginMessage: {
-              type: 'begin-image-export',
-              exportId
-            }
-          }, '*');
         })
         .catch(err => {
-          console.error('❌ Export failed:', err);
+          console.error('❌ Font resolution failed:', err);
+        })
+        .then(() => {
+          // After fonts are resolved, check if there are no images
+          if (state.expectedImages === 0) {
+            console.log(`📦 Image export skipped (no images) [${exportId}]`);
+            state.imageExportComplete = true;
+            checkExportCompletion(exportId);
+          } else {
+            parent.postMessage({
+              pluginMessage: {
+                type: 'begin-image-export',
+                exportId
+              }
+            }, '*');
+          }
         });
     }
+
     else if (msg.type === 'export-image') {
       fetch('http://localhost:3001/save-image', {
         method: 'POST',

@@ -22,7 +22,7 @@ export function processStyleUI(node) {
     imageScaleMode: (image && image.scaleMode) || null,
     stroke: (stroke && stroke.color) || null,
     strokeWidth: (stroke && stroke.weight) || null,
-    strokeOpacity: (stroke && stroke.opacity) || 1,
+    strokeOpacity: (stroke && stroke.opacity) || null,
     strokeStyleName: strokeStyleName || null,
     radius: getCornerRadius(node),
     blendMode: getBlendMode(node),

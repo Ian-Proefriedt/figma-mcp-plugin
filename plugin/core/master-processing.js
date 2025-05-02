@@ -7,14 +7,52 @@ import { sanitizeClassName } from '../utils/classname-sanitizer.js';
 import { getHtmlTagFromType } from '../utils/html-tag-interpreter.js';
 import { isImageNode } from '../detection/style-detection.js';
 
+import { mergeWithFallback, getInstanceMeta } from '../utils/inheritance-resolver.js';
+import { sanitizeDeep } from '../utils/value-sanitizer.js';
+import { stripNullsDeepExcept } from '../utils/null-omitter.js';
+
 export function processNodeProperties(node, overrides = {}) {
-  const className = sanitizeClassName(node.name);
   if (!node) return null;
+
+  const className = sanitizeClassName(node.name);
   const isComponent = node.type === 'COMPONENT';
   const isInstance = node.type === 'INSTANCE';
-  const instanceOf = isInstance && node.mainComponent ? node.mainComponent.name : null;
 
-  return {
+  let instanceOf = null;
+  let inheritedLayout = null;
+  let inheritedStyle = null;
+  let inheritedText = null;
+  let instanceMeta = null;
+
+  if (isInstance) {
+    try {
+      const comp = node.mainComponent;
+      if (comp) {
+        instanceOf = comp.name || null;
+        inheritedLayout = processLayoutUI(comp);
+        inheritedStyle = processStyleUI(comp);
+        inheritedText = comp.type === 'TEXT' ? processTextUI(comp) : null;
+        instanceMeta = getInstanceMeta(node);
+      }
+    } catch {
+      instanceOf = '⚠️ unresolved';
+    }
+  }
+
+  const layout = mergeWithFallback(processLayoutUI(node), inheritedLayout);
+  const style = mergeWithFallback(processStyleUI(node), inheritedStyle);
+
+  // ✅ Strip image-specific style values for non-image nodes
+  if (!isImageNode(node) && style) {
+    delete style.image;
+    delete style.imageScaleMode;
+  }
+
+  const text = node.type === 'TEXT'
+    ? mergeWithFallback(processTextUI(node), inheritedText)
+    : null;
+
+  const result = {
     id: node.id,
     name: node.name,
     tag: getHtmlTagFromType(node.type, node),
@@ -24,12 +62,18 @@ export function processNodeProperties(node, overrides = {}) {
       ...processPositionUI(node),
       ...(overrides.position || {})
     },
-    layout: processLayoutUI(node),
-    text: node.type === 'TEXT' ? processTextUI(node) : null,
-    style: processStyleUI(node),
-    isComponent: isComponent,
+    layout,
+    text,
+    style,
+    isMainComponent: isComponent,
     componentName: isComponent ? node.name : null,
     isInstance: isInstance,
-    instanceOf: instanceOf
+    instanceOf: instanceOf,
+    instanceMeta: instanceMeta
   };
+
+  const sanitized = sanitizeDeep(result);
+  return stripNullsDeepExcept(sanitized, ['text', 'layout']);
+
+
 }
