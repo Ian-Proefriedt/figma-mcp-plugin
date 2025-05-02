@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 export default {
   mode: 'development', // or 'production'
   target: 'webworker',  // <<< Important
-  entry: './src/plugin.js',
+  entry: './plugin/src/plugin.js',
   output: {
     filename: 'plugin.js',
     path: path.resolve(__dirname, 'dist'),
