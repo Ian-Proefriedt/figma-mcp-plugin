@@ -80,16 +80,20 @@ export function registerPluginEvents() {
     }
   
     else if (msg.type === 'begin-image-export') {
-      if (!node) {
+    if (!node) {
         figma.notify("Please select a node first.");
         return;
-      }
-      const exportId = msg.exportId;
-      if (!exportId) {
+    }
+    const exportId = msg.exportId;
+    if (!exportId) {
         console.warn('❗ Ignoring export message: missing exportId', msg);
         return;
-      }
-      handleSelection(node, { onlyExportImages: true, exportId });
+    }
+
+    // ✅ INSERT LOG HERE:
+    console.log("✅ begin-image-export received. Triggering image extraction for exportId:", exportId);
+
+    handleSelection(node, { onlyExportImages: true, exportId });
     }
   
     // ✅ NEW: AI-to-Plugin Message

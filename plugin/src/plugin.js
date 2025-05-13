@@ -1,3 +1,3 @@
-import { registerPluginEvents } from '../plugin/runtime/event-bridge.js';
+import { registerPluginEvents } from '../runtime/event-bridge.js';
 
 registerPluginEvents();

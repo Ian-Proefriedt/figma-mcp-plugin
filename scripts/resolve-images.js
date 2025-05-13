@@ -1,5 +1,5 @@
 // scripts/resolve-images.js (ESM)
-// Parses tree.json and saves image fills to /data/images
+// Dynamically parses latest *_tree.json and saves image fills to /data/images
 
 import fs from 'fs';
 import path from 'path';
@@ -10,10 +10,26 @@ const __dirname = path.dirname(__filename);
 
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-const treePath = path.resolve(__dirname, '../data/tree.json');
-const outputDir = path.resolve(__dirname, '../data/images');
-
+const DATA_DIR = path.resolve(__dirname, '../data');
+const outputDir = path.resolve(DATA_DIR, 'images');
 if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+function getLatestTreeFile() {
+  const files = fs.readdirSync(DATA_DIR)
+    .filter(name => name.endsWith('_tree.json'))
+    .map(name => ({
+      name,
+      time: fs.statSync(path.join(DATA_DIR, name)).mtime
+    }))
+    .sort((a, b) => b.time - a.time);
+
+  if (files.length === 0) {
+    console.error('❌ No *_tree.json file found in /data');
+    process.exit(1);
+  }
+
+  return path.join(DATA_DIR, files[0].name);
+}
 
 function collectImages(node, all = []) {
   if (node?.style?.image?.imageRef) {
@@ -52,8 +68,12 @@ async function downloadImage({ hash, name, format }) {
 }
 
 async function run() {
-  const tree = JSON.parse(fs.readFileSync(treePath, 'utf-8'));
+  const latestTreePath = getLatestTreeFile();
+  console.log(`🌳 Using tree file: ${latestTreePath}`);
+
+  const tree = JSON.parse(fs.readFileSync(latestTreePath, 'utf-8'));
   const images = collectImages(tree);
+
   for (const img of images) {
     await downloadImage(img);
   }

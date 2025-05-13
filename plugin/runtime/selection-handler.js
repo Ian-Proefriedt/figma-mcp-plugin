@@ -3,7 +3,10 @@ import { sanitizeClassName } from '../utils/classname-sanitizer.js';
 import { traverseNodeTree } from '../core/recursive-node-traversal.js';
 import { getSanitizeWarnings, clearSanitizeWarnings } from '../utils/value-sanitizer.js';
 
+
 export function handleSelection(node, { exportId, onlyExportImages = false } = {}) {
+
+  console.log("📥 handleSelection() called. onlyExportImages =", onlyExportImages, "exportId:", exportId);
   // 1. Process only the selected subtree for tree and font data
   const processedTree = traverseNodeTree(node);
   if (!processedTree) {
@@ -129,6 +132,8 @@ clearSanitizeWarnings();
 
   collectImageNodes(node); // use raw node, not processedTree
 
+  console.log("🖼️ Image export completed. Total image nodes found:", imageCount);
+  
   figma.ui.postMessage({
     type: 'image-export-count',
     exportId,

@@ -9,7 +9,7 @@ import { exportButtonUI } from './export-button/export-button-layout.js';
 // import { feedbackLogUI } from './feedback-log/feedback-log-layout.js';
 import { setupSelectionChangeHandler } from './selection/selection-change.js';
 //import { setupExportButtonHandler } from './export-button/export-button-logic.js';
-import { setupExportHandlers } from './utils/export-handlers.js';
+import { setupExportHandlers } from './utils/export-handler.js';
 
 console.log("🔥 plugin-ui.bundle.js has loaded");
 
