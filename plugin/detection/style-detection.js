@@ -1,57 +1,55 @@
-import {
-  rgbToHex,
-  interpretFillType,
-  interpretBlendMode
-} from '../interpretation/style-interpretation.js';
+// detection/style-detection.js
 
 export function isImageNode(node) {
-  return node && node.type === 'RECTANGLE' && node.fills && node.fills.some(f => f.type === 'IMAGE');
+  return node?.type === 'RECTANGLE' &&
+    node.fills?.some(f => f.type === 'IMAGE');
 }
 
-export function getFillAndImage(node) {
-  const fills = (node && node.fills) || [];
+export function getRawFillAndImage(node) {
+  const fills = node?.fills || [];
   let image = null;
   let fill = null;
+
   for (const f of fills) {
     if (!image && f.type === 'IMAGE') {
       image = {
-        type: 'image',
+        type: f.type,
         imageRef: f.imageHash || null,
         scaleMode: typeof f.scaleMode === 'string' ? f.scaleMode.toLowerCase() : null,
-        styleId: (node && node.fillStyleId) || null
+        styleId: node.fillStyleId || null
       };
-    } else if (!fill && (f.type === 'SOLID' || (f && f.type && f.type.endsWith('_GRADIENT')))) {
+    } else if (!fill && (f.type === 'SOLID' || f?.type?.endsWith('_GRADIENT'))) {
       fill = {
-        type: interpretFillType(f.type),
-        color: f.color ? rgbToHex(f.color) : null,
+        rawType: f.type,
+        rawColor: f.color || null,
         opacity: f.opacity || null,
-        styleId: (node && node.fillStyleId) || null
+        styleId: node.fillStyleId || null
       };
     }
   }
+
   return { fill, image };
 }
 
-export function getStroke(node) {
-  const stroke = (node && node.strokes && node.strokes[0]) || null;
+export function getRawStroke(node) {
+  const stroke = node?.strokes?.[0] || null;
   return {
-    color: (stroke && stroke.color) || null,
-    opacity: (stroke && stroke.opacity) || null,
-    weight: (node && node.strokeWeight) || null,
-    styleId: (node && node.strokeStyleId) || null
+    rawColor: stroke?.color || null,
+    opacity: stroke?.opacity || null,
+    weight: node?.strokeWeight || null,
+    styleId: node?.strokeStyleId || null
   };
 }
 
 export function getCornerRadius(node) {
-  return (node && node.cornerRadius) || null;
+  return node?.cornerRadius || null;
 }
 
-export function getBlendMode(node) {
-  return interpretBlendMode(node && node.blendMode);
+export function getRawBlendMode(node) {
+  return node?.blendMode || null;
 }
 
 export function getShadowPresence(node) {
-  const effects = (node && node.effects) || [];
+  const effects = node?.effects || [];
   return effects.some(effect => effect.type === 'DROP_SHADOW') ? true : null;
 }
-

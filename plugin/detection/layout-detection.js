@@ -1,22 +1,22 @@
-import { interpretAlignment } from '../interpretation/layout-interpretation.js';
+// detection/layout-detection.js
 
-export function getLayoutDirection(node) {
-  return node && node.layoutMode === 'VERTICAL' ? 'column' : 'row';
-}
-
-export function isAutoLayout(node) {
-  return (node && (node.layoutMode === 'VERTICAL' || node.layoutMode === 'HORIZONTAL'));
-}
-
-export function getLayoutAlignment(node) {
+export function getRawLayoutAlignment(node) {
   return {
-    justifyContent: interpretAlignment(node && node.primaryAxisAlignItems),
-    alignItems: interpretAlignment(node && node.counterAxisAlignItems)
+    primaryAxis: node?.primaryAxisAlignItems || null,
+    counterAxis: node?.counterAxisAlignItems || null
   };
 }
 
+export function getLayoutDirection(node) {
+  return node?.layoutMode === 'VERTICAL' ? 'column' : 'row';
+}
+
+export function isAutoLayout(node) {
+  return node?.layoutMode === 'VERTICAL' || node?.layoutMode === 'HORIZONTAL';
+}
+
 export function getItemSpacing(node) {
-  return (node && node.itemSpacing) || 0;
+  return node?.itemSpacing || 0;
 }
 
 export function getPadding(node) {
@@ -32,6 +32,5 @@ export function getPadding(node) {
 }
 
 export function getLayoutWrap(node) {
-  const val = node && node.layoutWrap;
-  return val === 'WRAP' ? 'wrap' : 'nowrap';
+  return node?.layoutWrap === 'WRAP' ? 'wrap' : 'nowrap';
 }

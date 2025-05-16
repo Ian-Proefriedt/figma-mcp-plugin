@@ -1,3 +1,4 @@
+import { processComponentReferences } from '../processing/component-processing.js';
 import { processLayoutUI } from '../processing/layout-processing.js';
 import { processPositionUI } from '../processing/position-processing.js';
 import { processStyleUI } from '../processing/style-processing.js';
@@ -42,26 +43,17 @@ export function processNodeProperties(node, overrides = {}) {
   const layout = mergeWithFallback(processLayoutUI(node), inheritedLayout);
   const style = mergeWithFallback(processStyleUI(node), inheritedStyle);
 
-  // ✅ Strip image-specific style values for non-image nodes
   if (!isImageNode(node) && style) {
     delete style.image;
     delete style.imageScaleMode;
   }
 
   let text = null;
-  let textPropertyReference = null;
-
   if (node.type === 'TEXT') {
     text = mergeWithFallback(processTextUI(node), inheritedText);
-
-    if (
-      'componentPropertyReferences' in node &&
-      node.componentPropertyReferences &&
-      typeof node.componentPropertyReferences.characters === 'string'
-  ) {
-      textPropertyReference = node.componentPropertyReferences.characters;
-    }
   }
+
+  const componentRefs = processComponentReferences(node);
 
   const result = {
     id: node.id,
@@ -75,17 +67,15 @@ export function processNodeProperties(node, overrides = {}) {
     },
     layout,
     text,
-    textPropertyReference,
     style,
     isMainComponent: isComponent,
     componentName: isComponent ? node.name : null,
     isInstance: isInstance,
     instanceOf: instanceOf,
-    instanceMeta: instanceMeta
+    instanceMeta: instanceMeta,
+    ...componentRefs
   };
 
   const sanitized = sanitizeDeep(result);
   return stripNullsDeepExcept(sanitized, ['text', 'layout']);
-
-
 }

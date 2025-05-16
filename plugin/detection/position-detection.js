@@ -1,4 +1,4 @@
-import { interpretConstraint } from '../interpretation/position-interpretation.js';
+// detection/position-detection.js
 
 export function isOverlapping(a, b) {
   if (!a || !b) return false;
@@ -41,15 +41,12 @@ export function getSizingModes(node) {
   };
 }
 
-export function getRotation(node) {
-  return (node && node.rotation) || null;
-}
+export function getRawConstraints(node) {
+  if (!node || !node.constraints) return { horizontal: null, vertical: null };
 
-export function getConstraints(node) {
-  const raw = (node && node.constraints) || {};
   return {
-    horizontal: interpretConstraint(raw.horizontal, 'horizontal'),
-    vertical: interpretConstraint(raw.vertical, 'vertical')
+    horizontal: node.constraints.horizontal || null,
+    vertical: node.constraints.vertical || null
   };
 }
 
@@ -65,4 +62,8 @@ export function getClipping(node) {
 
 export function getZIndex(node) {
   return 1; // placeholder: replaced by traverseNodeTree z-index logic
+}
+
+export function getRotation(node) {
+  return node?.rotation || null;
 }

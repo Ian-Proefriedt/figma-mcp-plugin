@@ -1,31 +1,49 @@
+// processing/style-processing.js
+
 import {
-  getFillAndImage,
-  getStroke,
+  getRawFillAndImage,
+  getRawStroke,
   getCornerRadius,
-  getBlendMode,
+  getRawBlendMode,
   getShadowPresence
 } from '../detection/style-detection.js';
+
+import {
+  interpretFillType,
+  interpretBlendMode,
+  rgbToHex
+} from '../interpretation/style-interpretation.js';
 
 import { getStyleNameById } from '../utils/style-name-resolver.js';
 
 export function processStyleUI(node) {
-  const { fill, image } = getFillAndImage(node);
-  const stroke = getStroke(node);
-  const fillStyleName = getStyleNameById(fill && fill.styleId, 'fill');
-  const strokeStyleName = getStyleNameById(stroke && stroke.styleId, 'stroke');
+  const { fill: rawFill, image } = getRawFillAndImage(node);
+  const stroke = getRawStroke(node);
+
+  const interpretedFill = rawFill
+    ? {
+        type: interpretFillType(rawFill.rawType),
+        color: rawFill.rawColor ? rgbToHex(rawFill.rawColor) : null,
+        opacity: rawFill.opacity || 1,
+        styleId: rawFill.styleId || null
+      }
+    : null;
+
+  const fillStyleName = getStyleNameById(interpretedFill?.styleId, 'fill');
+  const strokeStyleName = getStyleNameById(stroke?.styleId, 'stroke');
 
   return {
     fillStyleName: fillStyleName || null,
-    fill: (fill && fill.color) || null,
-    opacity: (fill && fill.opacity) || 1,
+    fill: interpretedFill?.color || null,
+    opacity: interpretedFill?.opacity ?? 1,
     image: image || null,
-    imageScaleMode: (image && image.scaleMode) || null,
-    stroke: (stroke && stroke.color) || null,
-    strokeWidth: (stroke && stroke.weight) || null,
-    strokeOpacity: (stroke && stroke.opacity) || null,
+    imageScaleMode: image?.scaleMode || null,
+    stroke: stroke?.rawColor ? rgbToHex(stroke.rawColor) : null,
+    strokeWidth: stroke?.weight || null,
+    strokeOpacity: stroke?.opacity || null,
     strokeStyleName: strokeStyleName || null,
     radius: getCornerRadius(node),
-    blendMode: getBlendMode(node),
+    blendMode: interpretBlendMode(getRawBlendMode(node)),
     shadow: getShadowPresence(node)
   };
 }

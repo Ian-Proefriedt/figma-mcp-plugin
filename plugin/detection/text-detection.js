@@ -1,30 +1,29 @@
-import { interpretFontWeight } from '../interpretation/text-interpretation.js';
+// detection/text-detection.js
 
 export function getTextContent(node) {
   return (node && node.characters) || '';
 }
 
-export function getFontStyle(node) {
+export function getRawFontStyle(node) {
   return {
-    fontSize: (node && node.fontSize) || null,
-    fontName: (node && node.fontName && node.fontName.family) || null,
-    fontStyle: (node && node.fontName && node.fontName.style) || null,
-    fontWeight: interpretFontWeight((node && node.fontName && node.fontName.style) || null)
+    fontSize: node?.fontSize || null,
+    fontName: node?.fontName?.family || null,
+    fontStyle: node?.fontName?.style || null
   };
 }
 
 export function getTextAlignment(node) {
   return {
-    horizontal: (node && node.textAlignHorizontal && node.textAlignHorizontal.toLowerCase()) || 'left',
-    vertical: (node && node.textAlignVertical && node.textAlignVertical.toLowerCase()) || 'top'
+    horizontal: node?.textAlignHorizontal?.toLowerCase() || 'left',
+    vertical: node?.textAlignVertical?.toLowerCase() || 'top'
   };
 }
 
 export function getTextSpacing(node) {
   return {
-    letterSpacing: (node && node.letterSpacing && node.letterSpacing.value) || null,
-    lineHeight: (node && node.lineHeight && node.lineHeight.value) || null,
-    paragraphSpacing: (node && node.paragraphSpacing) || null
+    letterSpacing: node?.letterSpacing?.value || null,
+    lineHeight: node?.lineHeight?.value || null,
+    paragraphSpacing: node?.paragraphSpacing || null
   };
 }
 
@@ -39,5 +38,5 @@ export function getTextCaseAndDecoration(node) {
 }
 
 export function getTextStyleId(node) {
-  return (node && node.textStyleId) || null;
+  return node?.textStyleId || null;
 }

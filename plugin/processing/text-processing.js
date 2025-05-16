@@ -1,6 +1,8 @@
+// processing/text-processing.js
+
 import {
   getTextContent,
-  getFontStyle,
+  getRawFontStyle,
   getTextAlignment,
   getTextSpacing,
   getTextCaseAndDecoration
@@ -10,9 +12,11 @@ import { interpretFontWeight } from '../interpretation/text-interpretation.js';
 import { getStyleNameById } from '../utils/style-name-resolver.js';
 
 export function processTextUI(node) {
-  if (!node || node.type !== 'TEXT') return null; // ✅ early exit for non-text nodes
-  const styleName = getStyleNameById(node && node.textStyleId, 'text');
-  const styleDef = node && node.textStyleId
+  if (!node || node.type !== 'TEXT') return null;
+
+  const styleName = getStyleNameById(node?.textStyleId, 'text');
+
+  const styleDef = node?.textStyleId
     ? figma.getLocalTextStyles().find(s => s.id === node.textStyleId)
     : null;
 
@@ -23,12 +27,20 @@ export function processTextUI(node) {
         fontStyle: styleDef.fontName.style,
         fontWeight: interpretFontWeight(styleDef.fontName.style)
       }
-    : getFontStyle(node);
+    : (() => {
+        const raw = getRawFontStyle(node);
+        return {
+          fontSize: raw.fontSize,
+          fontName: raw.fontName,
+          fontStyle: raw.fontStyle,
+          fontWeight: interpretFontWeight(raw.fontStyle)
+        };
+      })();
 
   const spacing = styleDef
     ? {
-        letterSpacing: styleDef.letterSpacing && styleDef.letterSpacing.value,
-        lineHeight: styleDef.lineHeight && styleDef.lineHeight.value,
+        letterSpacing: styleDef.letterSpacing?.value,
+        lineHeight: styleDef.lineHeight?.value,
         paragraphSpacing: styleDef.paragraphSpacing || null
       }
     : getTextSpacing(node);
