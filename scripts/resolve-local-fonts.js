@@ -65,6 +65,11 @@ async function main() {
   }
 
   const fontRequests = JSON.parse(fs.readFileSync(FONT_LIST_PATH, 'utf-8'));
+
+  ////////////////////////////////
+  console.log('📄 fonts-needed.json contents:', fontRequests);
+  ////////////////////////////////
+
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
   const allFontFiles = SYSTEM_FONT_DIRS.flatMap(dir => findFontsRecursively(dir));
@@ -73,6 +78,11 @@ async function main() {
   for (const requested of fontRequests) {
     const match = matchFont(requested, allFontMeta);
     if (match) {
+
+      ////////////////////////////////
+      console.log('🔍 Matched local font:', requested.family, requested.style);
+      ////////////////////////////////
+
       const safeName = `${requested.family}-${requested.style}`
         .toLowerCase()
         .replace(/\s+/g, '')
@@ -83,6 +93,11 @@ async function main() {
     } else {
       console.warn(`⚠️ Font not found: ${requested.family} — ${requested.style}`);
     }
+
+    ////////////////////////////////
+    console.log('🧾 Local font resolution complete');
+    ////////////////////////////////
+
   }
 }
 

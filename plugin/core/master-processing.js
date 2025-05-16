@@ -48,9 +48,20 @@ export function processNodeProperties(node, overrides = {}) {
     delete style.imageScaleMode;
   }
 
-  const text = node.type === 'TEXT'
-    ? mergeWithFallback(processTextUI(node), inheritedText)
-    : null;
+  let text = null;
+  let textPropertyReference = null;
+
+  if (node.type === 'TEXT') {
+    text = mergeWithFallback(processTextUI(node), inheritedText);
+
+    if (
+      'componentPropertyReferences' in node &&
+      node.componentPropertyReferences &&
+      typeof node.componentPropertyReferences.characters === 'string'
+  ) {
+      textPropertyReference = node.componentPropertyReferences.characters;
+    }
+  }
 
   const result = {
     id: node.id,
@@ -64,6 +75,7 @@ export function processNodeProperties(node, overrides = {}) {
     },
     layout,
     text,
+    textPropertyReference,
     style,
     isMainComponent: isComponent,
     componentName: isComponent ? node.name : null,

@@ -104,9 +104,15 @@ clearSanitizeWarnings();
   let imageCount = 0;
 
   function collectImageNodes(rawNode) {
+    if (!rawNode) return;
+  
     if (isImageNode(rawNode) && rawNode.fills) {
+      console.log("🧪 isImageNode returned TRUE for:", rawNode.name);
+  
       const imageFill = rawNode.fills.find(f => f.type === 'IMAGE');
       if (imageFill?.imageHash) {
+        console.log("🖼️ Image fill found in:", rawNode.name);
+  
         const promise = figma.getImageByHash(imageFill.imageHash).getBytesAsync()
           .then(bytes => {
             figma.ui.postMessage({
@@ -119,16 +125,17 @@ clearSanitizeWarnings();
           .catch(err => {
             console.warn(`⚠️ Failed to extract image: ${rawNode.name}`, err);
           });
-
+  
         imageCount++;
         imagePromises.push(promise);
       }
     }
-
+  
     if ('children' in rawNode && Array.isArray(rawNode.children)) {
       rawNode.children.forEach(collectImageNodes);
     }
   }
+  
 
   collectImageNodes(node); // use raw node, not processedTree
 

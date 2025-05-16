@@ -32,11 +32,12 @@ export function setupExportHandlers() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(summary)
-      }).then(() => {
-        console.log(`🚀 Export complete [exportId=${exportId}]`);
-        const exportButton = document.querySelector('.export-button');
-        if (exportButton) exportButton.disabled = false;
-      });
+      })
+        .then(() => {
+          console.log(`🚀 Export complete [exportId=${exportId}]`);
+          const exportButton = document.querySelector('.export-button');
+          if (exportButton) exportButton.disabled = false;
+        });
     }, 300);
   }
 
@@ -81,96 +82,91 @@ export function setupExportHandlers() {
     const state = exportStates.get(exportId);
     if (!state) return;
 
-    // ✅ Log symbol stripping BEFORE saving the tree
-    else if (msg.type === 'sanitize-warnings') {
-      if (Array.isArray(msg.warnings) && msg.warnings.length > 0) {
-        console.log(
-          `%c⚠️ [${msg.warnings.length}] Unsafe Symbols Stripped:`,
-          'color: #fdf3ad; background:#413c27; padding: 2px 8px; border-radius: 4px; font-weight: bold;',
-          { paths: msg.warnings }
-        );               
-      }
-    }   
+    switch (msg.type) {
+      case 'sanitize-warnings':
+        if (Array.isArray(msg.warnings) && msg.warnings.length > 0) {
+          console.log(
+            `%c⚠️ [${msg.warnings.length}] Unsafe Symbols Stripped:`,
+            'color: #fdf3ad; background:#413c27; padding: 2px 8px; border-radius: 4px; font-weight: bold;',
+            { paths: msg.warnings }
+          );
+        }
+        break;
 
-    else if (msg.type === 'image-export-count') {
-      state.expectedImages = msg.count;
-      state.savedImages = 0;
-    }
+      case 'image-export-count':
+        state.expectedImages = msg.count;
+        state.savedImages = 0;
+        break;
 
-    else if (msg.type === 'export-tree-to-server') {
-      if (handledExportIds.has(exportId)) return;
-      handledExportIds.add(exportId);
+      case 'export-tree-to-server':
+        if (handledExportIds.has(exportId)) return;
+        handledExportIds.add(exportId);
 
-      fetch('http://localhost:3001/save-tree', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...msg.tree, exportId })
-      })
-        .then(res => res.ok ? res.text() : Promise.reject('Tree save failed'))
-        .then(response => {
-          console.log(`🌳 Tree saved [${exportId}]`);
-          state.tree = true;
-
-          return fetch('http://localhost:3001/resolve-fonts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ exportId })
-          });
+        fetch('http://localhost:3001/save-tree', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...msg.tree, exportId })
         })
-        .then(res => res.ok ? res.json() : Promise.reject('Font resolution failed'))
-        .then(response => {
-          state.fonts = response.fonts || [];
-          state.fonts.forEach(font => {
-            console.log(`🔤 Font saved: ${font} [${exportId}]`);
-          });
-          console.log(`📦 Font export complete [${exportId}]`);
-        })
-        .catch(err => {
-          console.error('❌ Font resolution failed:', err);
-        })
-        .then(() => {
-          // After fonts are resolved, check if there are no images
-          if (state.expectedImages === 0) {
-            console.log(`📦 Image export skipped (no images) [${exportId}]`);
-            state.imageExportComplete = true;
-            checkExportCompletion(exportId);
-          } else {
+          .then(res => res.ok ? res.text() : Promise.reject('Tree save failed'))
+          .then(() => {
+            console.log(`🌳 Tree saved [${exportId}]`);
+            state.tree = true;
+
+            return fetch('http://localhost:3001/resolve-fonts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ exportId })
+            });
+          })
+          .then(res => res.ok ? res.json() : Promise.reject('Font resolution failed'))
+          .then(response => {
+            state.fonts = response.fonts || [];
+            state.fonts.forEach(font => {
+              console.log(`🔤 Font saved: ${font} [${exportId}]`);
+            });
+            console.log(`📦 Font export complete [${exportId}]`);
+          })
+          .catch(err => {
+            console.error('❌ Font resolution failed:', err);
+          })
+          .then(() => {
+            console.log(`📦 Triggering image export [${exportId}]`);
             parent.postMessage({
               pluginMessage: {
                 type: 'begin-image-export',
                 exportId
               }
             }, '*');
-          }
-        });
-    }
+          });          
+        break;
 
-    else if (msg.type === 'export-image') {
-      fetch('http://localhost:3001/save-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: msg.name,
-          bytes: msg.bytes,
-          exportId
+      case 'export-image':
+        fetch('http://localhost:3001/save-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: msg.name,
+            bytes: msg.bytes,
+            exportId
+          })
         })
-      })
-        .then(res => res.ok ? res.text() : Promise.reject('Image save failed'))
-        .then(response => {
-          console.log(`🖼️ Image saved: ${msg.name} [${exportId}]`);
-          state.images.add(msg.name);
-          state.savedImages += 1;
+          .then(res => res.ok ? res.text() : Promise.reject('Image save failed'))
+          .then(() => {
+            console.log(`🖼️ Image saved: ${msg.name} [${exportId}]`);
+            state.images.add(msg.name);
+            state.savedImages += 1;
 
-          if (state.savedImages === state.expectedImages) {
-            console.log(`📦 Image export complete [${exportId}]`);
-            state.imageExportComplete = true;
-          }
+            if (state.savedImages === state.expectedImages) {
+              console.log(`📦 Image export complete [${exportId}]`);
+              state.imageExportComplete = true;
+            }
 
-          checkExportCompletion(exportId);
-        })
-        .catch(err => {
-          console.error(`❌ Image export failed (${msg.name}):`, err);
-        });
+            checkExportCompletion(exportId);
+          })
+          .catch(err => {
+            console.error(`❌ Image export failed (${msg.name}):`, err);
+          });
+        break;
     }
   });
 }
