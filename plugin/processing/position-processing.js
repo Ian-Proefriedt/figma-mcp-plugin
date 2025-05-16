@@ -2,8 +2,6 @@
 
 import {
   getPosition,
-  getSize,
-  getSizingModes,
   getRotation,
   getRawConstraints,
   getPositioning,
@@ -15,17 +13,11 @@ import { interpretConstraint } from '../interpretation/position-interpretation.j
 
 export function processPositionUI(node) {
   const pos = getPosition(node);
-  const size = getSize(node);
-  const sizing = getSizingModes(node);
   const rawConstraints = getRawConstraints(node);
 
   return {
     x: pos.x,
     y: pos.y,
-    width: size.width,
-    widthMode: sizing.widthMode,
-    height: size.height,
-    heightMode: sizing.heightMode,
     rotation: getRotation(node),
     constraints: {
       horizontal: interpretConstraint(rawConstraints.horizontal, 'horizontal'),

@@ -30,15 +30,18 @@ export function getPosition(node) {
   return { x: (node && node.x) || 0, y: (node && node.y) || 0 };
 }
 
-export function getSize(node) {
-  return { width: (node && node.width) || 0, height: (node && node.height) || 0 };
+export function getRawSizeData(node) {
+  return {
+    width: node?.width || 0,
+    height: node?.height || 0,
+    primary: node.primaryAxisSizingMode?.toLowerCase() || 'fixed',
+    counter: node.counterAxisSizingMode?.toLowerCase() || 'fixed',
+    grow: node.layoutGrow || 0
+  };
 }
 
-export function getSizingModes(node) {
-  return {
-    widthMode: (node && node.primaryAxisSizingMode && node.primaryAxisSizingMode.toLowerCase()) || 'fixed',
-    heightMode: (node && node.counterAxisSizingMode && node.counterAxisSizingMode.toLowerCase()) || 'fixed'
-  };
+export function getRotation(node) {
+  return node?.rotation || null;
 }
 
 export function getRawConstraints(node) {
@@ -64,6 +67,3 @@ export function getZIndex(node) {
   return 1; // placeholder: replaced by traverseNodeTree z-index logic
 }
 
-export function getRotation(node) {
-  return node?.rotation || null;
-}
