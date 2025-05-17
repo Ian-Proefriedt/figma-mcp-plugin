@@ -1,4 +1,4 @@
-import { processComponentReferences } from '../processing/component-processing.js';
+import { processComponentBlock } from '../processing/component-processing.js';
 import { processLayoutUI } from '../processing/layout-processing.js';
 import { processPositionUI } from '../processing/position-processing.js';
 import { processStyleUI } from '../processing/style-processing.js';
@@ -8,72 +8,54 @@ import { sanitizeClassName } from '../utils/classname-sanitizer.js';
 import { getHtmlTagFromType } from '../utils/html-tag-interpreter.js';
 import { isImageNode } from '../detection/style-detection.js';
 
-import { mergeWithFallback, getInstanceMeta } from '../utils/inheritance-resolver.js';
+import { mergeWithFallback } from '../utils/inheritance-resolver.js';
 import { sanitizeDeep } from '../utils/value-sanitizer.js';
 import { stripNullsDeepExcept } from '../utils/null-omitter.js';
 
-export function processNodeProperties(node, overrides = {}) {
+export function processNodeProperties(node) {
   if (!node) return null;
 
   const className = sanitizeClassName(node.name);
   const isComponent = node.type === 'COMPONENT';
   const isInstance = node.type === 'INSTANCE';
 
-  let instanceOf = null;
   let inheritedLayout = null;
   let inheritedStyle = null;
   let inheritedText = null;
-  let instanceMeta = null;
 
-  if (isInstance) {
-    try {
-      const comp = node.mainComponent;
-      if (comp) {
-        instanceOf = comp.name || null;
-        inheritedLayout = processLayoutUI(comp);
-        inheritedStyle = processStyleUI(comp);
-        inheritedText = comp.type === 'TEXT' ? processTextUI(comp) : null;
-        instanceMeta = getInstanceMeta(node);
-      }
-    } catch {
-      instanceOf = '⚠️ unresolved';
-    }
+  if (isInstance && node.mainComponent) {
+    const comp = node.mainComponent;
+    inheritedLayout = processLayoutUI(comp);
+    inheritedStyle = processStyleUI(comp);
+    inheritedText = comp.type === 'TEXT' ? processTextUI(comp) : null;
   }
 
   const layout = mergeWithFallback(processLayoutUI(node), inheritedLayout);
   const style = mergeWithFallback(processStyleUI(node), inheritedStyle);
+  const position = processPositionUI(node);
 
   if (!isImageNode(node) && style) {
     delete style.image;
     delete style.imageScaleMode;
   }
 
-  let text = null;
-  if (node.type === 'TEXT') {
-    text = mergeWithFallback(processTextUI(node), inheritedText);
-  }
+  const text = node.type === 'TEXT'
+    ? mergeWithFallback(processTextUI(node), inheritedText)
+    : null;
 
-  const componentRefs = processComponentReferences(node);
+  const component = processComponentBlock(node);
 
   const result = {
-    id: node.id,
-    name: node.name,
-    tag: getHtmlTagFromType(node.type, node),
-    className: className,
     type: isImageNode(node) ? 'IMAGE' : node.type,
-    position: {
-      ...processPositionUI(node),
-      ...(overrides.position || {})
-    },
+    name: node.name,
+    id: node.id,
+    tag: getHtmlTagFromType(node.type, node),
+    className,
+    position,
     layout,
-    text,
     style,
-    isMainComponent: isComponent,
-    componentName: isComponent ? node.name : null,
-    isInstance: isInstance,
-    instanceOf: instanceOf,
-    instanceMeta: instanceMeta,
-    ...componentRefs
+    text,
+    component
   };
 
   const sanitized = sanitizeDeep(result);

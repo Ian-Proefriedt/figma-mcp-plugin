@@ -30,16 +30,6 @@ export function getPosition(node) {
   return { x: (node && node.x) || 0, y: (node && node.y) || 0 };
 }
 
-export function getRawSizeData(node) {
-  return {
-    width: node?.width || 0,
-    height: node?.height || 0,
-    primary: node.primaryAxisSizingMode?.toLowerCase() || 'fixed',
-    counter: node.counterAxisSizingMode?.toLowerCase() || 'fixed',
-    grow: node.layoutGrow || 0
-  };
-}
-
 export function getRotation(node) {
   return node?.rotation || null;
 }

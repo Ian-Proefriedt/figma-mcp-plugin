@@ -1,17 +1,16 @@
 import {
   isAutoLayout,
   getLayoutDirection,
+  getRawSizeData,
   getRawLayoutAlignment,
   getItemSpacing,
   getPadding,
   getLayoutWrap
 } from '../detection/layout-detection.js';
 
-import { getRawSizeData } from '../detection/position-detection.js';
 import { interpretAlignment, interpretSizeValues } from '../interpretation/layout-interpretation.js';
 
 export function processLayoutUI(node) {
-  if (node.type === 'TEXT') return null;
 
   const direction = getLayoutDirection(node);
   const rawAlignment = getRawLayoutAlignment(node);

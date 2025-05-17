@@ -15,6 +15,30 @@ export function isAutoLayout(node) {
   return node?.layoutMode === 'VERTICAL' || node?.layoutMode === 'HORIZONTAL';
 }
 
+export function getRawSizeData(node) {
+  console.log(`[🔍 RAW LAYOUT] ${node.name}`, {
+    type: node.type,
+    layoutMode: node.layoutMode,
+    primaryAxisSizingMode: node.primaryAxisSizingMode,
+    counterAxisSizingMode: node.counterAxisSizingMode,
+    layoutGrow: node.layoutGrow,
+    layoutAlign: node.layoutAlign,
+    width: node.width,
+    height: node.height,
+    parentWidth: node.parent?.width,
+    parentHeight: node.parent?.height,
+    parentLayoutMode: node.parent?.layoutMode
+  });
+    
+  return {
+    width: node?.width || 0,
+    height: node?.height || 0,
+    primary: node.primaryAxisSizingMode?.toLowerCase() || 'fixed',
+    counter: node.counterAxisSizingMode?.toLowerCase() || 'fixed',
+    grow: node.layoutGrow || 0
+  };
+}
+
 export function getItemSpacing(node) {
   return node?.itemSpacing || 0;
 }
