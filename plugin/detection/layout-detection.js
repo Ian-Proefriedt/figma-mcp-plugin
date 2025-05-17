@@ -8,7 +8,7 @@ export function getRawLayoutAlignment(node) {
 }
 
 export function getLayoutDirection(node) {
-  return node?.layoutMode === 'VERTICAL' ? 'column' : 'row';
+  return node?.layoutMode === 'VERTICAL' ? 'column' : node?.layoutMode === 'HORIZONTAL' ? 'row' : null;
 }
 
 export function isAutoLayout(node) {
@@ -16,31 +16,34 @@ export function isAutoLayout(node) {
 }
 
 export function getRawSizeData(node) {
-  console.log(`[🔍 RAW LAYOUT] ${node.name}`, {
-    type: node.type,
-    layoutMode: node.layoutMode,
-    primaryAxisSizingMode: node.primaryAxisSizingMode,
-    counterAxisSizingMode: node.counterAxisSizingMode,
-    layoutGrow: node.layoutGrow,
-    layoutAlign: node.layoutAlign,
-    width: node.width,
-    height: node.height,
-    parentWidth: node.parent?.width,
-    parentHeight: node.parent?.height,
-    parentLayoutMode: node.parent?.layoutMode
-  });
-    
+  const parent = node.parent;
+  const isText = node.type === 'TEXT';
+
   return {
-    width: node?.width || 0,
-    height: node?.height || 0,
-    primary: node.primaryAxisSizingMode?.toLowerCase() || 'fixed',
-    counter: node.counterAxisSizingMode?.toLowerCase() || 'fixed',
-    grow: node.layoutGrow || 0
+    parentLayoutMode: parent?.layoutMode ?? null,
+    parentWidth: parent?.width ?? null,
+    parentHeight: parent?.height ?? null,
+
+    layoutGrow: typeof node.layoutGrow === 'number' ? node.layoutGrow : 0,
+    layoutAlign: node.layoutAlign ?? null,
+
+    layoutMode: node.layoutMode || 'NONE',
+    primaryAxisSizingMode: node.primaryAxisSizingMode ?? null,
+    counterAxisSizingMode: node.counterAxisSizingMode ?? null,
+
+    isText,
+    ...(isText && {
+      textAutoResize: node.textAutoResize ?? null
+    }),
+
+    width: node?.width ?? 0,
+    height: node?.height ?? 0
   };
 }
 
 export function getItemSpacing(node) {
-  return node?.itemSpacing || 0;
+  const spacing = node?.itemSpacing;
+  return spacing && spacing !== 0 ? spacing : null;
 }
 
 export function getPadding(node) {
@@ -52,9 +55,13 @@ export function getPadding(node) {
   };
 
   const allZero = Object.values(padding).every(val => val === 0);
-  return allZero ? "none" : padding;
+  return allZero ? null : padding;
 }
 
 export function getLayoutWrap(node) {
-  return node?.layoutWrap === 'WRAP' ? 'wrap' : 'nowrap';
+  return node?.layoutWrap === 'WRAP' ? 'wrap' : null;
+}
+
+export function getOverflow(node) {
+  return (node && node.clipsContent) || null;
 }

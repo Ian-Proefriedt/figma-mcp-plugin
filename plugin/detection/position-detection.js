@@ -37,6 +37,14 @@ export function getRotation(node) {
 export function getRawConstraints(node) {
   if (!node || !node.constraints) return { horizontal: null, vertical: null };
 
+  const parentLayout = node.parent?.layoutMode;
+  const isInsideAutoLayout = parentLayout === 'HORIZONTAL' || parentLayout === 'VERTICAL';
+
+  if (isInsideAutoLayout) {
+    // Constraints are not used in Auto Layout
+    return { horizontal: null, vertical: null };
+  }
+
   return {
     horizontal: node.constraints.horizontal || null,
     vertical: node.constraints.vertical || null
@@ -47,10 +55,6 @@ export function getPositioning(node) {
   if (isActuallyInAutoLayout(node)) return 'relative';
   if (getFixedStatus(node)) return 'fixed';
   return node && node.layoutPositioning === 'ABSOLUTE' ? 'absolute' : 'relative';
-}
-
-export function getClipping(node) {
-  return (node && node.clipsContent) || null;
 }
 
 export function getZIndex(node) {

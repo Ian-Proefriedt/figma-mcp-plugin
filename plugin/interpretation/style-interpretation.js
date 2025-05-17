@@ -16,9 +16,9 @@ export function rgbToHex(color) {
   }
   
   export function interpretBlendMode(value) {
+    if (!value || value === 'NORMAL' || value === 'PASS_THROUGH') return null;
+  
     switch (value) {
-      case 'PASS_THROUGH':
-      case 'NORMAL': return 'normal';
       case 'MULTIPLY': return 'multiply';
       case 'SCREEN': return 'screen';
       case 'OVERLAY': return 'overlay';
@@ -34,6 +34,6 @@ export function rgbToHex(color) {
       case 'SATURATION': return 'saturation';
       case 'COLOR': return 'color';
       case 'LUMINOSITY': return 'luminosity';
-      default: return (value && value.toLowerCase().replaceAll('_', '-')) || 'normal';
+      default: return value.toLowerCase().replaceAll('_', '-');
     }
   }

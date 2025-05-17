@@ -5,7 +5,6 @@ import {
   getRotation,
   getRawConstraints,
   getPositioning,
-  getClipping,
   getZIndex
 } from '../detection/position-detection.js';
 
@@ -24,7 +23,6 @@ export function processPositionUI(node) {
       vertical: interpretConstraint(rawConstraints.vertical, 'vertical')
     },
     positioning: getPositioning(node),
-    clipping: getClipping(node),
     zIndex: getZIndex(node)
   };
 }

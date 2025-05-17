@@ -22,7 +22,7 @@ export function getRawFillAndImage(node) {
       fill = {
         rawType: f.type,
         rawColor: f.color || null,
-        opacity: f.opacity || null,
+        opacity: typeof f.opacity === 'number' ? f.opacity : null,
         styleId: node.fillStyleId || null
       };
     }
@@ -32,12 +32,16 @@ export function getRawFillAndImage(node) {
 }
 
 export function getRawStroke(node) {
-  const stroke = node?.strokes?.[0] || null;
+  const strokes = Array.isArray(node.strokes) ? node.strokes : [];
+  if (strokes.length === 0) return null;
+
+  const stroke = strokes[0]; // assume first stroke is the one you care about
+
   return {
-    rawColor: stroke?.color || null,
-    opacity: stroke?.opacity || null,
-    weight: node?.strokeWeight || null,
-    styleId: node?.strokeStyleId || null
+    rawColor: stroke.color || null,
+    opacity: typeof stroke.opacity === 'number' ? stroke.opacity : null,
+    weight: typeof node.strokeWeight === 'number' ? node.strokeWeight : null,
+    styleId: node.strokeStyleId || null
   };
 }
 

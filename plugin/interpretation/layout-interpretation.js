@@ -5,37 +5,84 @@ export function interpretAlignment(value) {
     case 'CENTER': return 'center';
     case 'SPACE_BETWEEN': return 'space-between';
     case 'SPACE_AROUND': return 'space-around';
-    default: return (value && value.toLowerCase().replaceAll('_', '-')) || 'undefined';
+    default: return (value && value.toLowerCase().replaceAll('_', '-')) || null;
   }
 }
 
-export function interpretSizeValues(node, layoutDirection, rawSizeData) {
-  const isRow = layoutDirection === 'row';
-  const parent = node.parent;
+function interpretAxisSize(raw, axis) {
 
-  const widthMode = isRow ? rawSizeData.primary : rawSizeData.counter;
-  const heightMode = isRow ? rawSizeData.counter : rawSizeData.primary;
+  const isMainAxis = (
+    (raw.parentLayoutMode === 'VERTICAL' && axis === 'height') ||
+    (raw.parentLayoutMode === 'HORIZONTAL' && axis === 'width')
+  );
 
-  const width = interpretAxisSize(widthMode, rawSizeData.grow, rawSizeData.width, parent?.width);
-  const height = interpretAxisSize(heightMode, rawSizeData.grow, rawSizeData.height, parent?.height);
+  const isInAutoLayout = raw.parentLayoutMode === 'VERTICAL' || raw.parentLayoutMode === 'HORIZONTAL';
+  const isSelfAutoLayout = raw.layoutMode === 'VERTICAL' || raw.layoutMode === 'HORIZONTAL';
 
-  return { width, height };
-}
-
-function interpretAxisSize(mode, grow, px, parentPx) {
-  if (mode === 'auto' && grow === 1) return 'flex: 1';       // Fill container (explicit)
-  if (mode === 'auto') return 'fit-content';                 // Hug contents
-
-  // Inferred 100% when fixed size matches parent size
-  if (
-    mode === 'fixed' &&
-    typeof px === 'number' &&
-    typeof parentPx === 'number' &&
-    Math.round(px) === Math.round(parentPx)
-  ) {
-    return '100%';
+  // ────────────────────────────────
+  // 1. FILL detection
+  // ────────────────────────────────
+  if (isInAutoLayout) {
+    if (isMainAxis && raw.layoutGrow === 1) return 'flex: 1';
+    if (!isMainAxis && raw.layoutAlign === 'STRETCH') return 'align-self: stretch';
   }
 
-  // Default fixed size
-  return `${Math.round(px)}px`;
-}  
+  // ────────────────────────────────
+  // 2. CONTAINER hug/fixed sizing
+  // ────────────────────────────────
+  if (isSelfAutoLayout) {
+    const sizingMode =
+      (raw.layoutMode === 'HORIZONTAL' && axis === 'width') ? raw.primaryAxisSizingMode :
+      (raw.layoutMode === 'HORIZONTAL' && axis === 'height') ? raw.counterAxisSizingMode :
+      (raw.layoutMode === 'VERTICAL' && axis === 'height') ? raw.primaryAxisSizingMode :
+      (raw.layoutMode === 'VERTICAL' && axis === 'width') ? raw.counterAxisSizingMode :
+      null;
+
+    if (sizingMode === 'AUTO') return 'fit-content';
+    if (sizingMode === 'FIXED') return `${Math.round(raw[axis])}px`;
+  }
+
+  // ────────────────────────────────
+  // 3. TEXT hug/fixed fallback
+  // ────────────────────────────────
+  if (raw.isText && raw.textAutoResize !== undefined) {
+    if (raw.textAutoResize === 'WIDTH_AND_HEIGHT') return 'fit-content';
+
+    if (raw.textAutoResize === 'HEIGHT') {
+      if (axis === 'height') return 'fit-content';
+      if (axis === 'width') return `${Math.round(raw.width)}px`;
+    }
+
+    if (raw.textAutoResize === 'NONE') {
+      return `${Math.round(raw[axis])}px`;
+    }
+  }
+
+  // ────────────────────────────────
+  // 4. IMPLIED 100% (outside layout)
+  // ────────────────────────────────
+  if (!isSelfAutoLayout && !raw.isText) {
+    const size = Math.round(raw[axis]);
+    const parentSize = axis === 'width' ? raw.parentWidth : raw.parentHeight;
+
+    if (
+      typeof size === 'number' &&
+      typeof parentSize === 'number' &&
+      Math.abs(size - parentSize) <= 1
+    ) {
+      return '100%';
+    }
+  }
+
+  // ────────────────────────────────
+  // 5. ABSOLUTE FIXED fallback
+  // ────────────────────────────────
+  return `${Math.round(raw[axis])}px`;
+}
+
+export function interpretSizeValues(raw) {
+  return {
+    width: interpretAxisSize(raw, 'width'),
+    height: interpretAxisSize(raw, 'height')
+  };
+}

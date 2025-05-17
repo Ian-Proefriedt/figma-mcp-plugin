@@ -17,6 +17,17 @@ import {
 import { getStyleNameById } from '../utils/style-name-resolver.js';
 
 export function processStyleUI(node) {
+  console.log(`[🎨 STYLE RAW] ${node.name || 'Unnamed'}`);
+  console.log({
+    fills: node.fills,
+    strokes: node.strokes,
+    strokeWeight: node.strokeWeight,
+    opacity: node.opacity,
+    blendMode: node.blendMode,
+    effects: node.effects,
+    strokeStyleId: node.strokeStyleId
+  });
+
   const { fill: rawFill, image } = getRawFillAndImage(node);
   const stroke = getRawStroke(node);
 

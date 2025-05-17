@@ -1,21 +1,22 @@
-// detection/text-detection.js
-
 export function getTextContent(node) {
   return (node && node.characters) || '';
 }
 
 export function getRawFontStyle(node) {
   return {
-    fontSize: node?.fontSize || null,
+    fontSize: typeof node?.fontSize === 'number' ? node.fontSize : null,
     fontName: node?.fontName?.family || null,
     fontStyle: node?.fontName?.style || null
   };
 }
 
 export function getTextAlignment(node) {
+  const hAlign = node?.textAlignHorizontal?.toLowerCase();
+  const vAlign = node?.textAlignVertical?.toLowerCase();
+
   return {
-    horizontal: node?.textAlignHorizontal?.toLowerCase() || 'left',
-    vertical: node?.textAlignVertical?.toLowerCase() || 'top'
+    horizontal: hAlign !== 'left' ? hAlign : null,
+    vertical: vAlign !== 'top' ? vAlign : null
   };
 }
 
@@ -32,8 +33,8 @@ export function getTextCaseAndDecoration(node) {
   const rawDecoration = node?.textDecoration;
 
   return {
-    textCase: typeof rawCase === 'string' ? rawCase.toLowerCase() : null,
-    textDecoration: typeof rawDecoration === 'string' ? rawDecoration.toLowerCase() : null
+    textCase: rawCase && rawCase !== 'ORIGINAL' ? rawCase.toLowerCase() : null,
+    textDecoration: rawDecoration && rawDecoration !== 'NONE' ? rawDecoration.toLowerCase() : null
   };
 }
 

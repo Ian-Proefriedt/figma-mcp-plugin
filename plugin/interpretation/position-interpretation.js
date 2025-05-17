@@ -1,22 +1,14 @@
 export function interpretConstraint(value, axis) {
-  if (axis === 'horizontal') {
-    switch (value) {
-      case 'MIN': return 'left';
-      case 'MAX': return 'right';
-      case 'CENTER': return 'center';
-      case 'STRETCH': return 'stretch';
-      case 'SCALE': return 'scale';
-      default: return (value && value.toLowerCase()) || 'undefined';
-    }
-  } else if (axis === 'vertical') {
-    switch (value) {
-      case 'MIN': return 'top';
-      case 'MAX': return 'bottom';
-      case 'CENTER': return 'center';
-      case 'STRETCH': return 'stretch';
-      case 'SCALE': return 'scale';
-      default: return (value && value.toLowerCase()) || 'undefined';
-    }
-  }
-  return 'undefined';
+  if (!value || typeof value !== 'string') return null;
+
+  // Axis-specific mappings
+  if (value === 'MIN') return axis === 'horizontal' ? 'left' : 'top';
+  if (value === 'MAX') return axis === 'horizontal' ? 'right' : 'bottom';
+
+  // Shared values across both axes
+  const allowed = ['CENTER', 'STRETCH', 'SCALE'];
+  if (allowed.includes(value)) return value.toLowerCase();
+
+  // Fallback: unknown or unsupported
+  return null;
 }
