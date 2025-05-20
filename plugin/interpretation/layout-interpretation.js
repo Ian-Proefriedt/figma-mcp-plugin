@@ -86,3 +86,7 @@ export function interpretSizeValues(raw) {
     height: interpretAxisSize(raw, 'height')
   };
 }
+
+export function interpretOverflow(clipsContent) {
+  return clipsContent === true ? 'hidden' : null;
+}

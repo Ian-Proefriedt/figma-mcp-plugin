@@ -9,7 +9,7 @@ import {
   getOverflow
 } from '../detection/layout-detection.js';
 
-import { interpretAlignment, interpretSizeValues } from '../interpretation/layout-interpretation.js';
+import { interpretAlignment, interpretSizeValues, interpretOverflow } from '../interpretation/layout-interpretation.js';
 
 export function processLayoutUI(node) {
 
@@ -17,9 +17,11 @@ export function processLayoutUI(node) {
   const rawAlignment = getRawLayoutAlignment(node);
   const sizeData = getRawSizeData(node);
   const interpretedSize = interpretSizeValues(sizeData);
+  const overflowRaw = getOverflow(node);
+  const overflow = interpretOverflow(overflowRaw);
 
   return {
-    type: isAutoLayout(node) ? 'flex' : 'block',
+    display: isAutoLayout(node) ? 'flex' : 'block',
     direction,
     width: interpretedSize.width,
     height: interpretedSize.height,
@@ -28,6 +30,6 @@ export function processLayoutUI(node) {
     gap: getItemSpacing(node),
     padding: getPadding(node),
     wrap: getLayoutWrap(node),
-    overflow: getOverflow(node)
+    overflow
   };
 }

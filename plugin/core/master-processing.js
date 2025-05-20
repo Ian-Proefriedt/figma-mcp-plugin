@@ -9,6 +9,7 @@ import { getHtmlTagFromType } from '../utils/html-tag-interpreter.js';
 import { isImageNode } from '../detection/style-detection.js';
 
 import { mergeWithFallback } from '../utils/inheritance-resolver.js';
+import { normalizeCssKeys } from '../utils/css-key-normalizer.js';
 import { sanitizeDeep } from '../utils/value-sanitizer.js';
 import { stripNullsDeepExcept } from '../utils/null-omitter.js';
 
@@ -30,9 +31,15 @@ export function processNodeProperties(node) {
     inheritedText = comp.type === 'TEXT' ? processTextUI(comp) : null;
   }
 
-  const layout = mergeWithFallback(processLayoutUI(node), inheritedLayout);
-  const style = mergeWithFallback(processStyleUI(node), inheritedStyle);
-  const position = processPositionUI(node);
+  const layout = normalizeCssKeys(
+    mergeWithFallback(processLayoutUI(node), inheritedLayout)
+  );
+  const style = normalizeCssKeys(
+    mergeWithFallback(processStyleUI(node), inheritedStyle)
+  );
+  const position = normalizeCssKeys(
+    processPositionUI(node)
+  );
 
   if (!isImageNode(node) && style) {
     delete style.image;
