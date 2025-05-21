@@ -10,7 +10,6 @@ export function interpretAlignment(value) {
 }
 
 function interpretAxisSize(raw, axis) {
-
   const isMainAxis = (
     (raw.parentLayoutMode === 'VERTICAL' && axis === 'height') ||
     (raw.parentLayoutMode === 'HORIZONTAL' && axis === 'width')
@@ -23,13 +22,12 @@ function interpretAxisSize(raw, axis) {
   // 1. FILL detection
   // ────────────────────────────────
   if (isInAutoLayout) {
-    if (isMainAxis && raw.layoutGrow === 1) return 'flex: 1';
-    if (!isMainAxis && raw.layoutAlign === 'STRETCH') return 'align-self: stretch';
+    if (isMainAxis && raw.layoutGrow === 1) return 'flexGrow';
+    if (!isMainAxis && raw.layoutAlign === 'STRETCH') return 'alignSelf';
   }
 
   // ────────────────────────────────
-  // 2. CONTAINER hug/fixed sizing
-  // ────────────────────────────────
+  // 2. Container hug/fixed
   if (isSelfAutoLayout) {
     const sizingMode =
       (raw.layoutMode === 'HORIZONTAL' && axis === 'width') ? raw.primaryAxisSizingMode :
@@ -43,8 +41,7 @@ function interpretAxisSize(raw, axis) {
   }
 
   // ────────────────────────────────
-  // 3. TEXT hug/fixed fallback
-  // ────────────────────────────────
+  // 3. Text hug/fixed fallback
   if (raw.isText && raw.textAutoResize !== undefined) {
     if (raw.textAutoResize === 'WIDTH_AND_HEIGHT') return 'fit-content';
 
@@ -59,8 +56,7 @@ function interpretAxisSize(raw, axis) {
   }
 
   // ────────────────────────────────
-  // 4. IMPLIED 100% (outside layout)
-  // ────────────────────────────────
+  // 4. Implied 100% (frame matching)
   if (!isSelfAutoLayout && !raw.isText) {
     const size = Math.round(raw[axis]);
     const parentSize = axis === 'width' ? raw.parentWidth : raw.parentHeight;
@@ -75,16 +71,40 @@ function interpretAxisSize(raw, axis) {
   }
 
   // ────────────────────────────────
-  // 5. ABSOLUTE FIXED fallback
-  // ────────────────────────────────
+  // 5. Absolute fallback
   return `${Math.round(raw[axis])}px`;
 }
 
-export function interpretSizeValues(raw) {
-  return {
-    width: interpretAxisSize(raw, 'width'),
-    height: interpretAxisSize(raw, 'height')
+
+export function interpretSizeAndLayoutBehavior(raw) {
+  const output = {
+    width: null,
+    height: null,
+    flexGrow: null,
+    alignSelf: null
   };
+
+  // WIDTH
+  const widthBehavior = interpretAxisSize(raw, 'width');
+  if (widthBehavior === 'flexGrow') {
+    output.flexGrow = 1;
+  } else if (widthBehavior === 'alignSelf') {
+    output.alignSelf = 'stretch';
+  } else {
+    output.width = widthBehavior;
+  }
+
+  // HEIGHT
+  const heightBehavior = interpretAxisSize(raw, 'height');
+  if (heightBehavior === 'flexGrow') {
+    output.flexGrow = 1; // unlikely but valid edge case
+  } else if (heightBehavior === 'alignSelf') {
+    output.alignSelf = 'stretch';
+  } else {
+    output.height = heightBehavior;
+  }
+
+  return output;
 }
 
 export function interpretOverflow(clipsContent) {

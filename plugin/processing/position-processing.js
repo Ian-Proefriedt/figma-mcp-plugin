@@ -1,28 +1,22 @@
-// processing/position-processing.js
-
 import {
-  getPosition,
+  getPositionType,
+  getRawPositionData,
   getRotation,
-  getRawConstraints,
-  getPositioning,
-  getZIndex
+  getZIndex,
+  
 } from '../detection/position-detection.js';
 
-import { interpretConstraint } from '../interpretation/position-interpretation.js';
+import { interpretPositionConstraints } from '../interpretation/position-interpretation.js';
 
 export function processPositionUI(node) {
-  const pos = getPosition(node);
-  const rawConstraints = getRawConstraints(node);
+
+  const rawPosition = getRawPositionData(node);
+  const interpretedPositionConstraints = interpretPositionConstraints(rawPosition);
 
   return {
-    x: pos.x,
-    y: pos.y,
+    position: getPositionType(node),
+    ...interpretedPositionConstraints,
     rotation: getRotation(node),
-    constraints: {
-      horizontal: interpretConstraint(rawConstraints.horizontal, 'horizontal'),
-      vertical: interpretConstraint(rawConstraints.vertical, 'vertical')
-    },
-    positioning: getPositioning(node),
     zIndex: getZIndex(node)
   };
 }

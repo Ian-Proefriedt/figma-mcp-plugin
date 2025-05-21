@@ -1,60 +1,47 @@
-// processing/style-processing.js
-
 import {
-  getRawFillAndImage,
+  getRawFill,
+  getRawImage,
   getRawStroke,
   getCornerRadius,
   getRawBlendMode,
-  getShadowPresence
+  getRawShadow
 } from '../detection/style-detection.js';
 
 import {
-  interpretFillType,
-  interpretBlendMode,
-  rgbToHex
+  interpretFill,
+  interpretImageFill,
+  interpretStroke,
+  interpretShadow,
+  interpretBlendMode
 } from '../interpretation/style-interpretation.js';
 
 import { getStyleNameById } from '../utils/style-name-resolver.js';
 
 export function processStyleUI(node) {
-  console.log(`[🎨 STYLE RAW] ${node.name || 'Unnamed'}`);
-  console.log({
-    fills: node.fills,
-    strokes: node.strokes,
-    strokeWeight: node.strokeWeight,
-    opacity: node.opacity,
-    blendMode: node.blendMode,
-    effects: node.effects,
-    strokeStyleId: node.strokeStyleId
-  });
+  const rawFill = getRawFill(node);
+  const rawImage = getRawImage(node);
+  const rawStroke = getRawStroke(node);
+  const rawShadow = getRawShadow(node);
+  const rawBlendMode = getRawBlendMode(node);
 
-  const { fill: rawFill, image } = getRawFillAndImage(node);
-  const stroke = getRawStroke(node);
-
-  const interpretedFill = rawFill
-    ? {
-        type: interpretFillType(rawFill.rawType),
-        color: rawFill.rawColor ? rgbToHex(rawFill.rawColor) : null,
-        opacity: rawFill.opacity || 1,
-        styleId: rawFill.styleId || null
-      }
-    : null;
-
-  const fillStyleName = getStyleNameById(interpretedFill?.styleId, 'fill');
-  const strokeStyleName = getStyleNameById(stroke?.styleId, 'stroke');
+  const fill = interpretFill(rawFill);
+  const image = interpretImageFill(rawImage);
+  const stroke = interpretStroke(rawStroke);
+  const shadow = interpretShadow(rawShadow);
+  const blendMode = interpretBlendMode(rawBlendMode);
 
   return {
-    fillStyleName: fillStyleName || null,
-    fill: interpretedFill?.color || null,
-    opacity: interpretedFill?.opacity ?? 1,
-    image: image || null,
-    imageScaleMode: image?.scaleMode || null,
-    stroke: stroke?.rawColor ? rgbToHex(stroke.rawColor) : null,
-    strokeWidth: stroke?.weight || null,
-    strokeOpacity: stroke?.opacity || null,
-    strokeStyleName: strokeStyleName || null,
+    fillStyleName: fill?.styleId ? getStyleNameById(fill.styleId, 'fill') : null,
+    background: fill?.color || null,
+    opacity: fill?.opacity ?? 1,
+
+    image: image || null, // structured image group
+    stroke: stroke || null, // structured stroke group
+
     radius: getCornerRadius(node),
-    blendMode: interpretBlendMode(getRawBlendMode(node)),
-    shadow: getShadowPresence(node)
+    blendMode: blendMode || null,
+    shadow: shadow || null, // structured shadow group
+
+    strokeStyleName: stroke?.styleId ? getStyleNameById(stroke.styleId, 'stroke') : null
   };
 }

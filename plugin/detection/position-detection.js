@@ -26,32 +26,29 @@ export function getFixedStatus(node) {
   return isAbsolute && isRootChild;
 }
 
-export function getPosition(node) {
-  return { x: (node && node.x) || 0, y: (node && node.y) || 0 };
+export function getRawPositionData(node) {
+  const parent = node.parent;
+
+  const x = node.relativeTransform?.[0]?.[2] ?? node.x ?? null;
+  const y = node.relativeTransform?.[1]?.[2] ?? node.y ?? null;
+
+  return {
+    x,
+    y,
+    width: node.width ?? null,
+    height: node.height ?? null,
+    parentWidth: parent?.width ?? null,
+    parentHeight: parent?.height ?? null,
+    horizontalConstraint: node.constraints?.horizontal ?? null,
+    verticalConstraint: node.constraints?.vertical ?? null
+  };
 }
 
 export function getRotation(node) {
   return node?.rotation || null;
 }
 
-export function getRawConstraints(node) {
-  if (!node || !node.constraints) return { horizontal: null, vertical: null };
-
-  const parentLayout = node.parent?.layoutMode;
-  const isInsideAutoLayout = parentLayout === 'HORIZONTAL' || parentLayout === 'VERTICAL';
-
-  if (isInsideAutoLayout) {
-    // Constraints are not used in Auto Layout
-    return { horizontal: null, vertical: null };
-  }
-
-  return {
-    horizontal: node.constraints.horizontal || null,
-    vertical: node.constraints.vertical || null
-  };
-}
-
-export function getPositioning(node) {
+export function getPositionType(node) {
   if (isActuallyInAutoLayout(node)) return 'relative';
   if (getFixedStatus(node)) return 'fixed';
   return node && node.layoutPositioning === 'ABSOLUTE' ? 'absolute' : 'relative';
@@ -60,4 +57,3 @@ export function getPositioning(node) {
 export function getZIndex(node) {
   return 1; // placeholder: replaced by traverseNodeTree z-index logic
 }
-

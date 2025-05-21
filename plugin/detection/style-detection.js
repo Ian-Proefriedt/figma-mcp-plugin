@@ -1,59 +1,70 @@
-// detection/style-detection.js
+export function getRawFill(node) {
+  const fills = node?.fills || [];
+  const primaryFill = fills.find(f => f.type === 'SOLID' || f.type?.endsWith('_GRADIENT'));
+  if (!primaryFill) return null;
 
-export function isImageNode(node) {
-  return node?.type === 'RECTANGLE' &&
-    node.fills?.some(f => f.type === 'IMAGE');
+  return {
+    type: primaryFill.type || null,
+    color: primaryFill.color || null,
+    opacity: typeof primaryFill.opacity === 'number' ? primaryFill.opacity : 1,
+    visible: typeof primaryFill.visible === 'boolean' ? primaryFill.visible : true,
+    styleId: node.fillStyleId || null,
+    boundVariables: primaryFill.boundVariables || null
+  };
 }
 
-export function getRawFillAndImage(node) {
+export function getRawImage(node) {
   const fills = node?.fills || [];
-  let image = null;
-  let fill = null;
+  const imageFill = fills.find(f => f.type === 'IMAGE');
+  if (!imageFill) return null;
 
-  for (const f of fills) {
-    if (!image && f.type === 'IMAGE') {
-      image = {
-        type: f.type,
-        imageRef: f.imageHash || null,
-        scaleMode: typeof f.scaleMode === 'string' ? f.scaleMode.toLowerCase() : null,
-        styleId: node.fillStyleId || null
-      };
-    } else if (!fill && (f.type === 'SOLID' || f?.type?.endsWith('_GRADIENT'))) {
-      fill = {
-        rawType: f.type,
-        rawColor: f.color || null,
-        opacity: typeof f.opacity === 'number' ? f.opacity : null,
-        styleId: node.fillStyleId || null
-      };
-    }
-  }
-
-  return { fill, image };
+  return {
+    type: 'IMAGE',
+    imageRef: imageFill.imageHash || null,
+    scaleMode: imageFill.scaleMode || null,
+    opacity: typeof imageFill.opacity === 'number' ? imageFill.opacity : 1,
+    visible: typeof imageFill.visible === 'boolean' ? imageFill.visible : true,
+    styleId: node.fillStyleId || null,
+    boundVariables: imageFill.boundVariables || null
+  };
 }
 
 export function getRawStroke(node) {
   const strokes = Array.isArray(node.strokes) ? node.strokes : [];
-  if (strokes.length === 0) return null;
-
-  const stroke = strokes[0]; // assume first stroke is the one you care about
+  const stroke = strokes[0];
+  if (!stroke) return null;
 
   return {
-    rawColor: stroke.color || null,
-    opacity: typeof stroke.opacity === 'number' ? stroke.opacity : null,
+    type: stroke.type || null,
+    color: stroke.color || null,
+    opacity: typeof stroke.opacity === 'number' ? stroke.opacity : 1,
     weight: typeof node.strokeWeight === 'number' ? node.strokeWeight : null,
-    styleId: node.strokeStyleId || null
+    align: node.strokeAlign || null,
+    styleId: node.strokeStyleId || null,
+    boundVariables: stroke.boundVariables || null
   };
 }
 
 export function getCornerRadius(node) {
-  return node?.cornerRadius || null;
+  return typeof node.cornerRadius === 'number' ? node.cornerRadius : null;
 }
 
 export function getRawBlendMode(node) {
   return node?.blendMode || null;
 }
 
-export function getShadowPresence(node) {
+export function getRawShadow(node) {
   const effects = node?.effects || [];
-  return effects.some(effect => effect.type === 'DROP_SHADOW') ? true : null;
+  const dropShadow = effects.find(e => e.type === 'DROP_SHADOW');
+
+  if (!dropShadow) return null;
+
+  return {
+    color: dropShadow.color || null,
+    offset: dropShadow.offset || null,
+    radius: dropShadow.radius || null,
+    spread: dropShadow.spread || null,
+    visible: typeof dropShadow.visible === 'boolean' ? dropShadow.visible : true,
+    blendMode: dropShadow.blendMode || null
+  };
 }

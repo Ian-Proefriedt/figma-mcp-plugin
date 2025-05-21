@@ -6,10 +6,10 @@ import { processTextUI } from '../processing/text-processing.js';
 
 import { sanitizeClassName } from '../utils/classname-sanitizer.js';
 import { getHtmlTagFromType } from '../utils/html-tag-interpreter.js';
-import { isImageNode } from '../detection/style-detection.js';
+import { getRawImage } from '../detection/style-detection.js'; // ✅ Use this instead
 
 import { mergeWithFallback } from '../utils/inheritance-resolver.js';
-import { normalizeCssKeys } from '../utils/css-key-normalizer.js';
+import { normalizeCssKeys } from '../utils/key-normalizer.js';
 import { sanitizeDeep } from '../utils/value-sanitizer.js';
 import { stripNullsDeepExcept } from '../utils/null-omitter.js';
 
@@ -41,9 +41,11 @@ export function processNodeProperties(node) {
     processPositionUI(node)
   );
 
-  if (!isImageNode(node) && style) {
-    delete style.image;
-    delete style.imageScaleMode;
+  const isImage = !!getRawImage(node);
+
+  if (!isImage && style) {
+  delete style.image;
+  delete style.imageScaleMode;
   }
 
   const text = node.type === 'TEXT'
@@ -53,7 +55,7 @@ export function processNodeProperties(node) {
   const component = processComponentBlock(node);
 
   const result = {
-    type: isImageNode(node) ? 'IMAGE' : node.type,
+    type: isImage ? 'IMAGE' : node.type,
     name: node.name,
     id: node.id,
     tag: getHtmlTagFromType(node.type, node),

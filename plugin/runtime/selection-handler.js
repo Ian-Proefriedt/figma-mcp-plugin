@@ -1,4 +1,4 @@
-import { isImageNode } from '../detection/style-detection.js';
+import { getRawImage } from '../detection/style-detection.js';
 import { sanitizeClassName } from '../utils/classname-sanitizer.js';
 import { traverseNodeTree } from '../core/recursive-node-traversal.js';
 import { getSanitizeWarnings, clearSanitizeWarnings } from '../utils/value-sanitizer.js';
@@ -106,35 +106,32 @@ clearSanitizeWarnings();
   function collectImageNodes(rawNode) {
     if (!rawNode) return;
   
-    if (isImageNode(rawNode) && rawNode.fills) {
-      console.log("🧪 isImageNode returned TRUE for:", rawNode.name);
+    const rawImage = getRawImage(rawNode);
+    if (rawImage?.imageRef) {
+      console.log("🧪 Image node detected:", rawNode.name);
   
-      const imageFill = rawNode.fills.find(f => f.type === 'IMAGE');
-      if (imageFill?.imageHash) {
-        console.log("🖼️ Image fill found in:", rawNode.name);
-  
-        const promise = figma.getImageByHash(imageFill.imageHash).getBytesAsync()
-          .then(bytes => {
-            figma.ui.postMessage({
-              type: 'export-image',
-              exportId,
-              bytes: Array.from(bytes),
-              name: sanitizeClassName(rawNode.name || 'image') + '.png'
-            });
-          })
-          .catch(err => {
-            console.warn(`⚠️ Failed to extract image: ${rawNode.name}`, err);
+      const promise = figma.getImageByHash(rawImage.imageRef).getBytesAsync()
+        .then(bytes => {
+          figma.ui.postMessage({
+            type: 'export-image',
+            exportId,
+            bytes: Array.from(bytes),
+            name: sanitizeClassName(rawNode.name || 'image') + '.png'
           });
+        })
+        .catch(err => {
+          console.warn(`⚠️ Failed to extract image: ${rawNode.name}`, err);
+        });
   
-        imageCount++;
-        imagePromises.push(promise);
-      }
+      imageCount++;
+      imagePromises.push(promise);
     }
   
     if ('children' in rawNode && Array.isArray(rawNode.children)) {
       rawNode.children.forEach(collectImageNodes);
     }
   }
+  
   
 
   collectImageNodes(node); // use raw node, not processedTree
