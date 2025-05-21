@@ -15,7 +15,7 @@ import {
   interpretBlendMode
 } from '../interpretation/style-interpretation.js';
 
-import { getStyleNameById } from '../utils/style-name-resolver.js';
+import { getStyleNameById } from '../utils/output/style-name-resolver.js';
 
 export function processStyleUI(node) {
   const rawFill = getRawFill(node);

@@ -4,14 +4,14 @@ import { processPositionUI } from '../processing/position-processing.js';
 import { processStyleUI } from '../processing/style-processing.js';
 import { processTextUI } from '../processing/text-processing.js';
 
-import { sanitizeClassName } from '../utils/classname-sanitizer.js';
-import { getHtmlTagFromType } from '../utils/html-tag-interpreter.js';
+import { sanitizeClassName } from '../utils/output/classname-sanitizer.js';
+import { getHtmlTagFromType } from '../utils/output/html-tag-interpreter.js';
 import { getRawImage } from '../detection/style-detection.js'; // ✅ Use this instead
 
-import { mergeWithFallback } from '../utils/inheritance-resolver.js';
-import { normalizeCssKeys } from '../utils/key-normalizer.js';
-import { sanitizeDeep } from '../utils/value-sanitizer.js';
-import { stripNullsDeepExcept } from '../utils/null-omitter.js';
+import { mergeWithFallback } from '../utils/detection/inheritance-resolver.js';
+import { normalizeCssKeys } from '../utils/output/key-normalizer.js';
+import { sanitizeDeep } from '../utils/detection/value-sanitizer.js';
+import { stripNullsDeepExcept } from '../utils/output/null-omitter.js';
 
 export function processNodeProperties(node) {
   if (!node) return null;

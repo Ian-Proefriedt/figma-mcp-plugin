@@ -1,7 +1,7 @@
 import { getRawImage } from '../detection/style-detection.js';
-import { sanitizeClassName } from '../utils/classname-sanitizer.js';
+import { sanitizeClassName } from '../utils/output/classname-sanitizer.js';
 import { traverseNodeTree } from '../core/recursive-node-traversal.js';
-import { getSanitizeWarnings, clearSanitizeWarnings } from '../utils/value-sanitizer.js';
+import { getSanitizeWarnings, clearSanitizeWarnings } from '../utils/detection/value-sanitizer.js';
 
 
 export function handleSelection(node, { exportId, onlyExportImages = false } = {}) {

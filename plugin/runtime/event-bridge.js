@@ -1,6 +1,6 @@
 import { handleSelection } from './selection-handler.js';
 import { traverseNodeTree } from '../core/recursive-node-traversal.js';
-import { logNodeOutput } from '../utils/detection-log.js';
+import { logNodeOutput } from '../utils/logging/detection-log.js';
 
 /**
  * Finds the top-level parent to use for sibling-aware traversal.

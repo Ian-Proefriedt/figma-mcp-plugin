@@ -9,7 +9,7 @@ import {
 } from '../detection/text-detection.js';
 
 import { interpretFontWeight } from '../interpretation/text-interpretation.js';
-import { getStyleNameById } from '../utils/style-name-resolver.js';
+import { getStyleNameById } from '../utils/output/style-name-resolver.js';
 
 export function processTextUI(node) {
   if (!node || node.type !== 'TEXT') return null;

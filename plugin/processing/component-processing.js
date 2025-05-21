@@ -4,7 +4,7 @@ import {
   getBooleanPropertyReference
 } from '../detection/component-detection.js';
 
-import { getInstanceMeta } from '../utils/inheritance-resolver.js';
+import { getInstanceMeta } from '../utils/detection/inheritance-resolver.js';
 
 export function processComponentReferences(node) {
   const props = {};
