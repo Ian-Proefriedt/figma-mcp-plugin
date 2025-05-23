@@ -19,7 +19,7 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Wrap express in a server so WebSocket can share it
+// Create HTTP + WebSocket server
 const server = http.createServer(app);
 server.listen(PORT, () => {
   console.log(`🧠 Express + WebSocket server running at http://localhost:${PORT}`);
@@ -58,49 +58,63 @@ function broadcastToClients(message) {
   });
 }
 
-// Ensure image directory exists
+// ✅ Ensure image directory exists
 const imageDir = path.resolve(__dirname, 'data/images');
 if (!fs.existsSync(imageDir)) fs.mkdirSync(imageDir, { recursive: true });
 
+// ✅ Dedicated image-saving route
 app.post('/save-image', (req, res) => {
   const { name, bytes } = req.body;
   if (!name || !bytes) return res.status(400).send('Missing name or bytes');
 
   const filePath = path.resolve(__dirname, 'data/images', name);
-  console.log('🧾 Writing to:', filePath);
+  console.log('🖼️ Writing image to:', filePath);
 
   fs.writeFile(filePath, Buffer.from(bytes), err => {
     if (err) {
-      console.error(`❌ Failed to save ${name}:`, err);
+      console.error(`❌ Failed to save image ${name}:`, err);
       return res.status(500).send('Write failed');
     }
-    console.log(`✅ Saved ${filePath}`);
+    console.log(`✅ Saved image to ${filePath}`);
     broadcastToClients({ type: 'image-saved', name });
     res.sendStatus(200);
   });
 });
 
-app.post('/save-tree', (req, res) => {
+// ✅ General-purpose export route (tree, token map, or other raw data)
+app.post('/save-data', (req, res) => {
   const { name, contents } = req.body;
   if (!name || !contents) return res.status(400).send('Missing name or contents');
 
   const filePath = path.resolve(__dirname, 'data', name);
-  console.log('🌳 __dirname:', __dirname);
-  console.log('🌳 Incoming name:', name);
-  console.log('🌳 Resolved path:', filePath);
-  console.log('🧾 Writing to:', filePath);
+  const dirPath = path.dirname(filePath);
+
+  console.log('📦 Saving export file...');
+  console.log('   🧾 Requested name:', name);
+  console.log('   📂 Directory to create:', dirPath);
+  console.log('   📄 Full target path:', filePath);
+
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+    console.log(`📁 Created directory: ${dirPath}`);
+  }
 
   fs.writeFile(filePath, JSON.stringify(contents, null, 2), err => {
     if (err) {
-      console.error(`❌ Failed to save tree:`, err);
+      console.error(`❌ Failed to save ${name}:`, err);
       return res.status(500).send('Write failed');
     }
-    console.log(`🌳 Saved tree to ${filePath}`);
-    broadcastToClients({ type: 'tree-saved', name });
+
+    console.log(`✅ Successfully wrote ${name} to ${filePath}`);
+
+    const eventType = name.includes('variable-map') ? 'variable-map-saved' : 'tree-saved';
+    broadcastToClients({ type: eventType, name });
+
     res.sendStatus(200);
   });
 });
 
+// ✅ Font resolution route
 app.post('/resolve-fonts', (req, res) => {
   console.log('🔁 Received font resolution request');
   exec('node scripts/generate-fonts.js && node scripts/resolve-local-fonts.js && node scripts/resolve-google-fonts.js', (err, stdout, stderr) => {
@@ -112,7 +126,6 @@ app.post('/resolve-fonts', (req, res) => {
     console.log('🔠 Font resolution output:\n', stdout);
     broadcastToClients({ type: 'fonts-resolved', details: stdout });
 
-    // ✅ Read fonts-needed.json and return font list
     const fontsJsonPath = path.resolve(__dirname, 'data/fonts-needed.json');
     let fontList = [];
 

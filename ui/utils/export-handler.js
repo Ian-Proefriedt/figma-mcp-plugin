@@ -93,16 +93,11 @@ export function setupExportHandlers() {
         }
         break;
 
-      case 'image-export-count':
-        state.expectedImages = msg.count;
-        state.savedImages = 0;
-        break;
-
       case 'export-tree-to-server':
         if (handledExportIds.has(exportId)) return;
         handledExportIds.add(exportId);
 
-        fetch('http://localhost:3001/save-tree', {
+        fetch('http://localhost:3001/save-data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...msg.tree, exportId })
@@ -159,12 +154,43 @@ export function setupExportHandlers() {
             if (state.savedImages === state.expectedImages) {
               console.log(`📦 Image export complete [${exportId}]`);
               state.imageExportComplete = true;
+              checkExportCompletion(exportId);
             }
-
-            checkExportCompletion(exportId);
           })
           .catch(err => {
             console.error(`❌ Image export failed (${msg.name}):`, err);
+          });
+        break;
+
+      case 'image-export-count':
+        state.expectedImages = msg.count;
+        state.savedImages = 0;
+
+        if (msg.count === 0) {
+          console.log(`📦 No images to export [${exportId}]`);
+          state.imageExportComplete = true;
+          checkExportCompletion(exportId);
+        }
+        break;
+
+      case 'export-variable-map':
+        fetch('http://localhost:3001/save-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: msg.name,
+            contents: msg.contents
+          })
+        })
+          .then(res => {
+            if (res.ok) {
+              console.log(`📦 Variable map saved: ${msg.name}`);
+            } else {
+              throw new Error('Variable map save failed');
+            }
+          })
+          .catch(err => {
+            console.error('❌ Failed to save variable map:', err);
           });
         break;
     }

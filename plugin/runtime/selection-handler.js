@@ -102,7 +102,7 @@ clearSanitizeWarnings();
   // 4. Image export only (on separate call)
   const imagePromises = [];
   let imageCount = 0;
-
+  
   function collectImageNodes(rawNode) {
     if (!rawNode) return;
   
@@ -132,23 +132,20 @@ clearSanitizeWarnings();
     }
   }
   
-  
-
   collectImageNodes(node); // use raw node, not processedTree
-
+  
   console.log("🖼️ Image export completed. Total image nodes found:", imageCount);
   
+  // ✅ Always post this once — immediately
   figma.ui.postMessage({
     type: 'image-export-count',
     exportId,
     count: imageCount
   });
-
+  
+  // ✅ Still wait for image extraction to finish, but no need to re-send count
   Promise.all(imagePromises).then(() => {
-    figma.ui.postMessage({
-      type: 'image-export-count',
-      exportId,
-      count: imageCount
-    });
+    console.log(`🖼️ Image export promises completed [${exportId}]`);
   });
+
 }

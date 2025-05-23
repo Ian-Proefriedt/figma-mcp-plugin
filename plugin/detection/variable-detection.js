@@ -6,31 +6,40 @@ export function detectAllVariables() {
   
     const collectionMap = new Map();
     const variableMap = new Map();
-  
-    // Collect all collections
+    const modeNameMap = new Map();
+
     for (const collection of collections) {
       collectionMap.set(collection.id, {
         id: collection.id,
         name: collection.name,
-        modes: collection.modes // array of mode names, or empty if not mode-aware
+        modes: collection.modes
       });
+
+      for (const mode of collection.modes) {
+        modeNameMap.set(mode.modeId, mode.name);
+      }
     }
   
     // Collect all variables and their metadata
     for (const variable of variables) {
       const collection = collectionMap.get(variable.variableCollectionId);
       const hasModes = (collection?.modes?.length || 0) > 1;
+
+        //console.log(`🧪 DETECTED VARIABLE: ${variable.name} [${variable.id}]`);
+        //console.log('   referencesByMode:', variable.referencesByMode);
+        //console.log('   valuesByMode:', variable.valuesByMode);
   
       const valuesByMode = {};
       const referencesByMode = {};
   
       for (const modeKey in variable.valuesByMode) {
-        valuesByMode[modeKey] = variable.valuesByMode[modeKey];
-      }
-  
-      for (const modeKey in variable.referencesByMode) {
-        referencesByMode[modeKey] = variable.referencesByMode[modeKey];
-      }
+        const val = variable.valuesByMode[modeKey];
+        valuesByMode[modeKey] = val;
+      
+        if (val?.type === 'VARIABLE_ALIAS') {
+          referencesByMode[modeKey] = val.id;
+        }
+      }      
   
       variableMap.set(variable.id, {
         id: variable.id,
@@ -46,6 +55,7 @@ export function detectAllVariables() {
   
     return {
       collections: collectionMap,
-      variables: variableMap
+      variables: variableMap,
+      modeNames: modeNameMap
     };
   }

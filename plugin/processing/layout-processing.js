@@ -6,7 +6,6 @@ import {
   getRawLayoutAlignment,
   getItemSpacing,
   getPadding,
-  
   getOverflow
 } from '../detection/layout-detection.js';
 

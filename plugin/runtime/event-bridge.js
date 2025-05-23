@@ -1,10 +1,10 @@
 import { handleSelection } from './selection-handler.js';
 import { traverseNodeTree } from '../core/recursive-node-traversal.js';
 import { logNodeOutput } from '../utils/logging/detection-log.js';
+import { processTokens } from '../processing/variable-processing.js';
 
-/**
- * Finds the top-level parent to use for sibling-aware traversal.
- */
+const tokenMap = processTokens(); // ✅ No detection logic here
+
 function getTraversalRoot(node) {
   let current = node;
   while (current.parent && current.parent.type !== 'PAGE') {
@@ -13,9 +13,6 @@ function getTraversalRoot(node) {
   return current;
 }
 
-/**
- * Recursively searches a tree for a node by ID.
- */
 function findNodeById(tree, id) {
   if (tree.id === id) return tree;
   if (tree.children) {
@@ -47,25 +44,23 @@ export function registerPluginEvents() {
 
     try {
       const safeResult = JSON.parse(JSON.stringify(result, (key, value) => {
-        // Strip imageRef from style.image
         if (key === 'imageRef') return null;
         return value;
       }));
-    
+
       figma.ui.postMessage({
         type: 'selection-change',
         data: safeResult
       });
-    
+
     } catch (err) {
       console.error('❌ Failed to post message due to unsafe data:', err);
     }
-    
   });
 
   figma.ui.onmessage = msg => {
     const node = figma.currentPage.selection[0];
-  
+
     if (msg.type === 'start-export') {
       if (!node) {
         figma.notify("Please select a node first.");
@@ -76,46 +71,47 @@ export function registerPluginEvents() {
         console.warn('❗ Ignoring export message: missing exportId', msg);
         return;
       }
+
+      // ✳️ Export node tree
       handleSelection(node, { exportId });
+
+      // ✅ Export token map as a separate message
+      try {
+        figma.ui.postMessage({
+          type: 'export-variable-map',
+          exportId, // ✅ send it for consistency
+          name: `raw/variable-map.json`,
+          contents: tokenMap
+        });
+        console.log('📦 Sent variable-map.json to server');
+      } catch (err) {
+        console.error('❌ Failed to export token map:', err);
+      }
     }
-  
+
     else if (msg.type === 'begin-image-export') {
-    if (!node) {
+      if (!node) {
         figma.notify("Please select a node first.");
         return;
-    }
-    const exportId = msg.exportId;
-    if (!exportId) {
+      }
+      const exportId = msg.exportId;
+      if (!exportId) {
         console.warn('❗ Ignoring export message: missing exportId', msg);
         return;
+      }
+
+      console.log("✅ begin-image-export received. Triggering image extraction for exportId:", exportId);
+      handleSelection(node, { onlyExportImages: true, exportId });
     }
 
-    // ✅ INSERT LOG HERE:
-    console.log("✅ begin-image-export received. Triggering image extraction for exportId:", exportId);
-
-    handleSelection(node, { onlyExportImages: true, exportId });
-    }
-  
-    // ✅ NEW: AI-to-Plugin Message
     else if (msg.type === 'ai-message') {
       figma.notify(`🤖 AI: ${msg.message}`, { timeout: 5000 });
-  
+
       figma.ui.postMessage({
         type: 'show-ai-feedback',
         message: msg.message,
         payload: msg.payload
       });
     }
-      
-
-    // ✳️ Future: Allow UI → plugin messages to be relayed to server via fetch
-    // Example:
-    // if (msg.type === 'send-to-ai') {
-    //   fetch('http://localhost:3001/send-to-ai', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(msg.payload)
-    //   });
-    // }
   };
 }
